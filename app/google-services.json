@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "970895939049",
+    "project_id": "on-my-way-cb1144",
+    "storage_bucket": "on-my-way-cb1144.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:970895939049:android:776eb2144ac849d06b6778",
+        "android_client_info": {
+          "package_name": "com.jppleal.onmywayapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC35xtG6srUF1dm1EyIEUEQbuMKMt5M6aA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
