@@ -27,7 +27,7 @@ private lateinit var binding: ActivityLoginBinding
      binding = ActivityLoginBinding.inflate(layoutInflater)
      setContentView(binding.root)
 
-        val username = binding.username
+        val username = binding.numInternal
         val password = binding.password
         val login = binding.login
         val loading = binding.loading
