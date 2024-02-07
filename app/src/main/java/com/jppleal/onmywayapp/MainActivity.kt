@@ -1,76 +1,110 @@
 package com.jppleal.onmywayapp
 
 
+import android.content.Context
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.widget.Button
-import android.widget.EditText
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.FirebaseApp
-import com.jppleal.onmywayapp.R.layout.activity_login
 import com.jppleal.onmywayapp.ui.theme.OnMyWayAppTheme
+import kotlinx.coroutines.tasks.await
 
 class MainActivity : ComponentActivity() {
-    private val auth = FirebaseAuth.getInstance();
+    private val auth = FirebaseAuth.getInstance()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
         setContent {
-            OnMyWayAppTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    //Greeting("Android")
-                    LoginScreen()
-                }
-            }
+            LoginScreen()
         }
     }
 
     @Composable
     fun LoginScreen() {
-        val cbNumber = findViewById<EditText>(R.id.numCB).text.toString()
-        val internalNumber = findViewById<EditText>(R.id.numInternal).text.toString()
-        val password = findViewById<EditText>(R.id.password).text.toString() //this must be hashed??
+        var cbNumber by remember{ mutableStateOf("")}
+        var internalNumber by remember{ mutableStateOf("")}
+        var password by remember { mutableStateOf("")} //this must be hashed??
+        val context = LocalContext.current
 
-        val onLoginClick: () -> Unit = {
-            authenticateUser(cbNumber, internalNumber, password)
-        }
+        Surface ( //start of Compose being use for the login page
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ){
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ){
+                Image(painter = painterResource(id = R.drawable.jose_logo_01),
+                    contentDescription = "Logo",
+                    modifier = Modifier.size(120.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(value = cbNumber ,
+                    onValueChange = { cbNumber = it},
+                    label ={ Text(text = "Nº CB")},
+                    modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(value = internalNumber,
+                    onValueChange = {internalNumber = it},
+                    label = { Text(text = "Internal Num")},
+                    modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(value = password,
+                    onValueChange = {password = it},
+                    label = { Text(text = "Password") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { loginUser(context, internalNumber, cbNumber, password) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                {
+                    Text(text = "Log In")
 
-        AndroidView(modifier = Modifier.fillMaxSize(),
-            factory = { context ->
-                LayoutInflater.from(context).inflate(activity_login, null, false)
-            },
-                update = { view ->
-                    val loginButton = view.findViewById<Button>(R.id.login)
-                    loginButton.setOnClickListener{
-                        onLoginClick()
-                    }
                 }
-        )
-    }
-
-    //this method is missing the cbnumber to check the log in
-    private fun authenticateUser(cbNumber: String, internalNumber: String, password: String) {
-        auth.signInWithEmailAndPassword(internalNumber, password).addOnCompleteListener{
-            task ->
-            if (task.isSuccessful){ //maybe had a condition where the cbNumber has to match
-                //navigation logic here
-            }else{
-                //auth failed
             }
+        }
+    }
+    fun loginUser(context: Context, internalNumber: String, cbNumber: String, password: String){
+        try {
+            val email = "$internalNumber@$cbNumber.com"
+            val result = auth.signInWithEmailAndPassword(email, password)
+            Toast.makeText(context, "Loginsuccesful", Toast.LENGTH_SHORT).show()
+        }catch (e: Exception){
+            Toast.makeText(context, "Authentication failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
