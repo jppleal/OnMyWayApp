@@ -38,6 +38,7 @@ import com.google.firebase.FirebaseApp
 import com.jppleal.onmywayapp.ui.theme.OnMyWayAppTheme
 import kotlinx.coroutines.tasks.await
 
+
 class MainActivity : ComponentActivity() {
     private val auth = FirebaseAuth.getInstance()
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,7 +69,7 @@ class MainActivity : ComponentActivity() {
             ){
                 Image(painter = painterResource(id = R.drawable.jose_logo_01),
                     contentDescription = "Logo",
-                    modifier = Modifier.size(120.dp)
+                    modifier = Modifier.size(300.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(value = cbNumber ,
@@ -112,7 +113,9 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun DefaultPreview(){
         OnMyWayAppTheme {
+            LoginScreen()
             Text("Nop, not good. But at least got here.")
         }
+
     }
 }
