@@ -118,10 +118,28 @@ private fun loginUser(context: Context, internalNumber: String, cbNumber: String
 @Composable
 fun HomeScreen() {
     Text(text = "Home Screen")
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ){
+        Column (
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+            ){
+            Text(text = "This is the Home Screen!")
+        }
+    }
 }
 
 @Preview
 @Composable
 fun LoginScreenPreview() {
     AppContent()
+}
+
+@Preview
+@Composable
+fun HomeScreenPreview(){
+    HomeScreen()
 }
