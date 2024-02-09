@@ -2,11 +2,13 @@ package com.jppleal.onmywayapp
 
 import android.content.Context
 import android.os.Bundle
+import android.widget.Space
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -17,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
@@ -32,17 +35,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 @Composable
 fun AppContent(){
     var loggedIn by remember { mutableStateOf(false)}
+    val context = LocalContext.current
     if (loggedIn) {
-        HomeScreen()
+        HomeScreen(userName = "José Leal", internalNumber = "935")
     }else{
-        LoginScreen{loggedIn = it}
+        LoginScreen{ success ->
+            if (success) {
+                loggedIn = true
+            }
+        }
     }
 }
-
 @Composable
 fun LoginScreen(onLoginSuccess: (Boolean) -> Unit) {
     var cbNumber by remember { mutableStateOf("") }
@@ -116,8 +122,7 @@ private fun loginUser(context: Context, internalNumber: String, cbNumber: String
 }
 
 @Composable
-fun HomeScreen() {
-    Text(text = "Home Screen")
+fun HomeScreen( userName: String, internalNumber: String) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -127,10 +132,43 @@ fun HomeScreen() {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
             ){
-            Text(text = "This is the Home Screen!")
+            TopNavigationBar(userName = userName, internalNumber =internalNumber ) {
+             //goes to profile?
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = "It's quiet here... No news... Good news?")
         }
     }
 }
+@Composable
+fun TopNavigationBar(userName: String, internalNumber: String, onUserNameClicked: () -> Unit){
+    Surface(
+        color = MaterialTheme.colorScheme.background,
+        shadowElevation = 4.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ){
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ){
+            ClickableText(
+                text = AnnotatedString(userName),
+                onClick = {offset ->
+                    onUserNameClicked()},
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "($internalNumber)",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimary)
+
+        }
+    }
+}
+
 
 @Preview
 @Composable
@@ -141,5 +179,5 @@ fun LoginScreenPreview() {
 @Preview
 @Composable
 fun HomeScreenPreview(){
-    HomeScreen()
+    HomeScreen("José Leal", "935")
 }
