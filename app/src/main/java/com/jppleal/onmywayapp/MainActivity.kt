@@ -1,15 +1,23 @@
 package com.jppleal.onmywayapp
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
+import android.widget.ImageButton
 import android.widget.Space
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -17,6 +25,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -30,8 +40,21 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
-        setContent {
-            AppContent()
+
+        val sharePref = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        val userEmail = sharePref.getString("userEmail","")
+        if (!userEmail.isNullOrEmpty()){
+            setContent{
+                HomeScreen(userName = "José Leal", internalNumber = "935")
+            }
+        }else{
+            setContent {
+                LoginScreen{
+                    success -> if (success){
+                    }
+                }
+                AppContent()
+            }
         }
     }
 }
@@ -39,13 +62,9 @@ class MainActivity : ComponentActivity() {
 fun AppContent(){
     var loggedIn by remember { mutableStateOf(false)}
     val context = LocalContext.current
-    if (loggedIn) {
-        HomeScreen(userName = "José Leal", internalNumber = "935")
-    }else{
-        LoginScreen{ success ->
-            if (success) {
-                loggedIn = true
-            }
+    LoginScreen{ success ->
+        if (success) {
+            loggedIn = true
         }
     }
 }
@@ -108,12 +127,75 @@ fun LoginScreen(onLoginSuccess: (Boolean) -> Unit) {
     }
 }
 
+
+@Composable
+fun HomeScreen( userName: String, internalNumber: String) {
+    val context = LocalContext.current
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ){
+        Column (
+            modifier = Modifier.padding(0.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+            ){
+            TopNavigationBar(userName = userName, internalNumber =internalNumber ) {
+             //goes to profile?
+            }
+            Spacer(modifier = Modifier.fillMaxHeight())
+            Text(text = "It's quiet here... No news... Good news?")
+        }
+    }
+}
+@Composable
+fun TopNavigationBar(userName: String, internalNumber: String, onUserNameClicked: () -> Unit){
+    val context = LocalContext.current
+    Surface(
+        color = MaterialTheme.colorScheme.background,
+        modifier = Modifier
+            .fillMaxWidth()
+    ){
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ){
+            Column {
+                ClickableText(
+                    text = AnnotatedString(userName),
+                    onClick = { offset ->
+                        onUserNameClicked()
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(10.dp,0.dp,0.dp,0.dp)
+                )
+                Text(
+                    text = AnnotatedString("($internalNumber)"),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+            }
+
+            IconButton(
+                onClick = {onOptionsButtonClicked()},
+                modifier = Modifier.size(48.dp)
+            ){
+                Icon(Icons.Default.Settings, contentDescription = "Options" )
+            }
+        }
+    }
+}
 private fun loginUser(context: Context, internalNumber: String, cbNumber: String, password: String): Boolean {
     val auth = FirebaseAuth.getInstance()
+    val sharedPref = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+    val editor = sharedPref.edit()
     return try {
         val email = "$internalNumber@$cbNumber.com"
         val result = auth.signInWithEmailAndPassword(email, password)
         Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+        editor.putString("userEmail", email)
+        editor.apply()
         true
     } catch (e: Exception) {
         Toast.makeText(context, "Authentication failed: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -122,54 +204,22 @@ private fun loginUser(context: Context, internalNumber: String, cbNumber: String
 }
 
 @Composable
-fun HomeScreen( userName: String, internalNumber: String) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ){
-        Column (
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-            ){
-            TopNavigationBar(userName = userName, internalNumber =internalNumber ) {
-             //goes to profile?
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "It's quiet here... No news... Good news?")
-        }
-    }
-}
-@Composable
-fun TopNavigationBar(userName: String, internalNumber: String, onUserNameClicked: () -> Unit){
+fun onOptionsButtonClicked(){
+    val context = LocalContext.current
     Surface(
         color = MaterialTheme.colorScheme.background,
-        shadowElevation = 4.dp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxWidth()
     ){
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ){
-            ClickableText(
-                text = AnnotatedString(userName),
-                onClick = {offset ->
-                    onUserNameClicked()},
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "($internalNumber)",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimary)
-
+        Column {
+            Text(text = "some text in the options")
         }
     }
 }
-
-
+fun LogOut( sharedPref: SharedPreferences){
+    val editor = sharedPref.edit()
+    editor.remove("userEmail")
+    editor.apply()
+}
 @Preview
 @Composable
 fun LoginScreenPreview() {
@@ -180,4 +230,10 @@ fun LoginScreenPreview() {
 @Composable
 fun HomeScreenPreview(){
     HomeScreen("José Leal", "935")
+}
+
+@Preview
+@Composable
+fun onOptionsButtonClickedPreview(){
+    onOptionsButtonClicked()
 }
