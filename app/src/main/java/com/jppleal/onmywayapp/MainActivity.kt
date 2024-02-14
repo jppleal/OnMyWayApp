@@ -1,7 +1,6 @@
 package com.jppleal.onmywayapp
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -10,6 +9,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -24,6 +24,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.FirebaseApp
+import java.sql.Timestamp
+import kotlin.reflect.KFunction1
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,25 +35,26 @@ class MainActivity : ComponentActivity() {
         val userEmail = sharePref.getString("userEmail","")
         if (!userEmail.isNullOrEmpty()){
             setContent{
-                HomeScreen(userName = "José Leal", internalNumber = "935", onLogout = :: logOut)
+                HomeScreen("José Leal", "935", :: logOut, getSomeGoodHardcodedAlerts())
             }
         }else{
             setContent {
                 LoginScreen{
                     success -> if (success){
-                        HomeScreen(userName = "José Leal", internalNumber = "935", onLogout = :: logOut )
+                   //     HomeScreen("José Leal", "935", :: logOut, getSomeGoodHardcodedAlerts() )
                     }
                 }
                 AppContent()
             }
         }
     }
-    fun logOut(context: Context){
-        val sharePref = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-        val editor = sharePref.edit()
-        editor.remove("userEmail")
-        editor.apply()
-    }
+}
+
+fun logOut(context: Context){
+    val sharePref = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+    val editor = sharePref.edit()
+    editor.remove("userEmail")
+    editor.apply()
 }
 @Composable
 fun AppContent(){
@@ -61,11 +65,11 @@ fun AppContent(){
             success -> loggedIn = success
         })
         }else{
-            HomeScreen(userName = "José Leal", internalNumber = "935" )
+            HomeScreen(userName = "José Leal", internalNumber = "935", ::logOut, getSomeGoodHardcodedAlerts())
     }
 }
 @Composable
-fun LoginScreen(onLoginSuccess: @Composable (Boolean) -> Unit) {
+fun LoginScreen(onLoginSuccess: (Boolean) -> Unit) {
     var cbNumber by remember { mutableStateOf("") }
     var internalNumber by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -122,7 +126,7 @@ fun LoginScreen(onLoginSuccess: @Composable (Boolean) -> Unit) {
     }
 }
 @Composable
-fun HomeScreen( userName: String, internalNumber: String) {
+fun HomeScreen(userName: String, internalNumber: String, onLogout: (Context) -> Unit, alerts: List<Alert>) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -137,8 +141,23 @@ fun HomeScreen( userName: String, internalNumber: String) {
             }
             Spacer(modifier = Modifier.fillMaxHeight())
             Text(text = "It's quiet here... No news... Good news?")
+            AlertList(alerts = alerts)
         }
     }
+}
+@Composable
+fun AlertList(alerts: List<Alert>){
+    Column {
+        alerts.forEach{
+                alert ->
+            AlertItem(alert = alert)
+            Divider() //This adds dividers between alerts
+        }
+    }
+}
+@Composable
+fun AlertItem(alert: Alert){
+    Text(text = alert.message)
 }
 @Composable
 fun TopNavigationBar(userName: String, internalNumber: String, onUserNameClicked: () -> Unit){
@@ -210,11 +229,41 @@ fun LoginScreenPreview() {
 @Preview
 @Composable
 fun HomeScreenPreview(){
-    HomeScreen("José Leal", "935")
+    HomeScreen("José Leal", "935", ::logOut, getSomeGoodHardcodedAlerts())
+}
+@Preview
+@Composable
+fun AlertListPreview(){
+    val alerts = getSomeGoodHardcodedAlerts()
+    AlertList(alerts = alerts)
 }
 
 @Preview
 @Composable
 fun OptionScreenPreview(){
     OptionScreen(onLogout = {})
+}
+
+//defined Alert data class
+data class Alert(
+    val id: Int,
+    val message: String,
+    val timestamp: Long
+)
+//Function for test purposes
+fun getSomeGoodHardcodedAlerts(): List<Alert>{
+    return listOf(
+        Alert(
+            id=1, message = "Inc. Urbano - Saída de VUCI 01",
+            timestamp = System.currentTimeMillis() //this will have the timestamp from the server
+        ),
+        Alert(
+            id=2, message = "INC. URBANO - SAÍDA DE VUCI 06",
+            timestamp = System.currentTimeMillis()
+        ),
+        Alert(
+            id = 3, message = "INC. URBANO - SAÍDA DE VTTU 02",
+            timestamp = System.currentTimeMillis()
+        )
+    )
 }
