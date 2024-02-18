@@ -8,20 +8,33 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.FirebaseApp
 import java.sql.Timestamp
@@ -161,7 +174,8 @@ fun AlertItem(alert: Alert){
 }
 @Composable
 fun TopNavigationBar(userName: String, internalNumber: String, onUserNameClicked: () -> Unit){
-    Surface(
+    val scrollBehaviour = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+  /*  Surface(
         color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxWidth()
     ){
@@ -183,6 +197,38 @@ fun TopNavigationBar(userName: String, internalNumber: String, onUserNameClicked
                     style = MaterialTheme.typography.bodyMedium
                 )
         }
+    }*/
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehaviour.nestedScrollConnection),
+        topBar = {
+            CenterAlignedTopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary
+                ),
+                title = {
+                    Text("Centered Top App Bar",
+                    1, TextOverflow.Ellipsis)
+                },
+                navigationIcon = {
+                    IconButton(onClick = { /*TODO*/ }) { //what is this bro
+                        Icon(imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "Localized description")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /*TODO*/ }) { //again... what is this bro
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Localized description again dude"
+                        )
+                    }
+                },
+                scrollBehavior = scrollBehaviour
+            )
+        },
+    ) {
+        innerPadding -> ScrollContent(innerPadding)
     }
 }
 @Composable
