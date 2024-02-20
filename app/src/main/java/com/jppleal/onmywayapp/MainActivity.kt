@@ -7,13 +7,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,9 +34,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -146,14 +154,13 @@ fun HomeScreen(userName: String, internalNumber: String, onLogout: (Context) -> 
     ){
         Column (
             modifier = Modifier.padding(0.dp),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
             ){
             TopNavigationBar(userName = userName, internalNumber = internalNumber ) {
              //goes to profile?
             }
-            Spacer(modifier = Modifier.fillMaxHeight())
-            Text(text = "It's quiet here... No news... Good news?")
+            Spacer(modifier = Modifier.height(16.dp))
             AlertList(alerts = alerts)
         }
     }
@@ -164,42 +171,31 @@ fun AlertList(alerts: List<Alert>){
         alerts.forEach{
                 alert ->
             AlertItem(alert = alert)
-            Divider() //This adds dividers between alerts
+            //Divider() //This adds dividers between alerts
         }
     }
 }
 @Composable
 fun AlertItem(alert: Alert){
-    Text(text = alert.message)
+    ElevatedCard(
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 6.dp
+        ),
+        modifier = Modifier.size(width = 300.dp, height = 100.dp)
+    ) {
+        Text(text = alert.message,
+            modifier = Modifier.padding(16.dp),
+            textAlign = TextAlign.Center)
+    }
 }
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopNavigationBar(userName: String, internalNumber: String, onUserNameClicked: () -> Unit){
     val scrollBehaviour = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-  /*  Surface(
-        color = MaterialTheme.colorScheme.background,
-        modifier = Modifier.fillMaxWidth()
-    ){
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-
-        ){
-                ClickableText(
-                    text = AnnotatedString(userName),
-                    onClick = { offset ->
-                        onUserNameClicked()
-                    },
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(10.dp,0.dp,0.dp,0.dp)
-                )
-                Text(
-                    text = AnnotatedString("($internalNumber)"),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-        }
-    }*/
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehaviour.nestedScrollConnection),
+        modifier = Modifier
+            .nestedScroll(scrollBehaviour.nestedScrollConnection)
+            .height(40.dp),
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -207,13 +203,12 @@ fun TopNavigationBar(userName: String, internalNumber: String, onUserNameClicked
                     titleContentColor = MaterialTheme.colorScheme.primary
                 ),
                 title = {
-                    Text("Centered Top App Bar",
-                    1, TextOverflow.Ellipsis)
+                    Text(text = "$userName - $internalNumber", maxLines = 1 ,overflow = TextOverflow.Ellipsis)
                 },
                 navigationIcon = {
                     IconButton(onClick = { /*TODO*/ }) { //what is this bro
-                        Icon(imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = "Localized description")
+                        //Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        //contentDescription = "Localized description")
                     }
                 },
                 actions = {
@@ -228,7 +223,17 @@ fun TopNavigationBar(userName: String, internalNumber: String, onUserNameClicked
             )
         },
     ) {
-        innerPadding -> ScrollContent(innerPadding)
+        innerPadding ->
+        ScrollContent(innerPadding)
+    }
+}
+@Composable
+fun ScrollContent(innerPadding: PaddingValues){
+    Column (
+        modifier = Modifier
+            .padding(innerPadding)
+            .verticalScroll(rememberScrollState())
+    ){
     }
 }
 @Composable
@@ -283,7 +288,6 @@ fun AlertListPreview(){
     val alerts = getSomeGoodHardcodedAlerts()
     AlertList(alerts = alerts)
 }
-
 @Preview
 @Composable
 fun OptionScreenPreview(){
