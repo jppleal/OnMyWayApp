@@ -2,6 +2,7 @@ package com.jppleal.onmywayapp
 
 import android.content.Context
 import android.os.Bundle
+import android.widget.Space
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,6 +16,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -24,6 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -33,6 +37,7 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.platform.LocalContext
@@ -46,6 +51,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.FirebaseApp
 import java.sql.Timestamp
+import java.util.TimerTask
 import kotlin.reflect.KFunction1
 
 class MainActivity : ComponentActivity() {
@@ -171,6 +177,7 @@ fun AlertList(alerts: List<Alert>){
         alerts.forEach{
                 alert ->
             AlertItem(alert = alert)
+            Spacer(modifier = Modifier.height(20.dp))
             //Divider() //This adds dividers between alerts
         }
     }
@@ -179,13 +186,31 @@ fun AlertList(alerts: List<Alert>){
 fun AlertItem(alert: Alert){
     ElevatedCard(
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 6.dp
+            defaultElevation = 5.dp
         ),
-        modifier = Modifier.size(width = 300.dp, height = 100.dp)
+        modifier = Modifier.size(width = 300.dp, height = 150.dp),
+
     ) {
         Text(text = alert.message,
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(0.dp,5.dp,0.dp,0.dp),
             textAlign = TextAlign.Center)
+        Spacer(modifier = Modifier.height(1.dp))
+        Text(text = alert.dateTime.toString())
+        Spacer(modifier = Modifier.height(1.dp))
+        Text(text = "Solicita-se: ${alert.firefigthers}x Bombeiros; ${alert.graduateds}x Graduados; ${alert.truckDriver}x Motorista de pesados " )
+        Row {
+            Button(onClick = { /*TODO*/ },
+                colors = ButtonDefaults.buttonColors(Color.Green)) {
+                Text(text = "A CAMINHO",
+                    color = Color.Black)
+            }
+            Button(onClick = { /*TODO*/ },
+                colors = ButtonDefaults.buttonColors(Color.Red)) {
+                Text(text = "INDISPONÍVEL",
+                    color = Color.Black
+                )
+            }
+        }
     }
 }
 @OptIn(ExperimentalMaterial3Api::class)
@@ -298,22 +323,28 @@ fun OptionScreenPreview(){
 data class Alert(
     val id: Int,
     val message: String,
-    val timestamp: Long
+    val dateTime: String?,
+    val firefigthers: Int,
+    val graduateds: Int,
+    val truckDriver: Int
 )
 //Function for test purposes
 fun getSomeGoodHardcodedAlerts(): List<Alert>{
     return listOf(
         Alert(
             id=1, message = "Inc. Urbano - Saída de VUCI 01",
-            timestamp = System.currentTimeMillis() //this will have the timestamp from the server
+            dateTime = "22-02-2024 00:08",
+            4,1,1
         ),
         Alert(
             id=2, message = "INC. URBANO - SAÍDA DE VUCI 06",
-            timestamp = System.currentTimeMillis()
+            dateTime = "22-02-2024 00:08",
+            4,1,1
         ),
         Alert(
             id = 3, message = "INC. URBANO - SAÍDA DE VTTU 02",
-            timestamp = System.currentTimeMillis()
+            dateTime = "22-02-2024 00:08",
+            4,1,1
         )
     )
 }
