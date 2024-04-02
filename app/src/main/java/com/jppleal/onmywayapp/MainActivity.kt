@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -238,7 +239,7 @@ fun AlertItem(alert: Alert) {
             horizontalArrangement = Arrangement.Center
         ) { //Column or Row?
             Button(
-                onClick = { showDialog = true },
+                onClick = { showDialog = true},
                 modifier = Modifier
                     .widthIn()
                     .padding(5.dp),
@@ -271,7 +272,7 @@ fun AlertItem(alert: Alert) {
     }
 }
 
-@Composable
+@Composable //Lets user to let emissor know how long it will take to arrive
 fun EstimatedTimeOfArrival(onDismiss: () -> Unit) {
     var selectedNumber by remember {
         mutableStateOf(0)
@@ -287,43 +288,54 @@ fun EstimatedTimeOfArrival(onDismiss: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text("Tempo previsto de chegada: ")
+                Text("Tempo previsto de chegada: XX minutos")/*TODO*/ //indicar o tempo estimado com base na localização ou morada pré definida
                 Spacer(modifier = Modifier.height(2.dp))
-                Row(modifier = Modifier.padding(0.dp,5.dp,0.dp,0.dp)) {
+                Row(modifier = Modifier.padding(0.dp,1.dp,0.dp,1.dp)) {
                     //there's no segmented buttons on compose
                     TextButton(onClick = { selectedNumber = 5 },
                     modifier = Modifier
-                        .padding(horizontal = 1.dp, vertical = 4.dp)
+                        .padding(horizontal = 1.dp, vertical = 1.dp)
                         .background(
-                            if (selectedNumber == 5) Color.LightGray else Color.Transparent,
-                            RoundedCornerShape(50)
+                            if (selectedNumber == 5) Color.LightGray else Color.Transparent
                         )){
                         Text("5")
                     }
+                    Divider(color = Color.LightGray,
+                        modifier = Modifier
+                            .height(40.dp)
+                            .width(1.dp),
+                    )
                     TextButton(onClick = { selectedNumber = 10 },
                         modifier = Modifier
-                            .padding(horizontal = 1.dp, vertical = 4.dp)
+                            .padding(horizontal = 1.dp, vertical = 1.dp)
                             .background(
-                                if (selectedNumber == 10) Color.LightGray else Color.Transparent,
-                                RoundedCornerShape(50)
+                                if (selectedNumber == 10) Color.LightGray else Color.Transparent
                             )){
                         Text("10")
                     }
+                    Divider(color = Color.LightGray,
+                        modifier = Modifier
+                            .height(40.dp)
+                            .width(1.dp),
+                    )
                     TextButton(onClick = { selectedNumber = 15 },
                         modifier = Modifier
-                            .padding(horizontal = 1.dp, vertical = 4.dp)
+                            .padding(horizontal = 1.dp, vertical = 1.dp)
                             .background(
-                                if (selectedNumber == 15) Color.LightGray else Color.Transparent,
-                                RoundedCornerShape(50)
+                                if (selectedNumber == 15) Color.LightGray else Color.Transparent
                             )){
                         Text("15")
                     }
+                    Divider(color = Color.LightGray,
+                        modifier = Modifier
+                            .height(40.dp)
+                            .width(1.dp),
+                         )
                     TextButton(onClick = { selectedNumber = 16 },
                         modifier = Modifier
-                            .padding(horizontal = 1.dp, vertical = 4.dp)
+                            .padding(horizontal = 1.dp, vertical = 1.dp)
                             .background(
-                                if (selectedNumber == 16) Color.LightGray else Color.Transparent,
-                                RoundedCornerShape(50)
+                                if (selectedNumber == 16) Color.LightGray else Color.Transparent
                             )){
                         Text("+15")
                     }
