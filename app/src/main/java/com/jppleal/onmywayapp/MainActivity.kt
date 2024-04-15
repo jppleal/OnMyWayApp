@@ -2,6 +2,7 @@ package com.jppleal.onmywayapp
 
 import android.content.Context
 import android.os.Bundle
+import android.widget.Space
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,7 +14,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -44,6 +48,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import org.w3c.dom.Text
@@ -56,6 +62,7 @@ class MainActivity : ComponentActivity() {
         val userEmail = sharePref.getString("userEmail", "")
         if (!userEmail.isNullOrEmpty()) {
             setContent {
+                AppContent()
                 HomeScreen("José Leal", "935", ::logOut, getSomeGoodHardcodedAlerts())
             }
         } else {
@@ -63,9 +70,9 @@ class MainActivity : ComponentActivity() {
                 LoginScreen { success ->
                     if (success) {
                         //     HomeScreen("José Leal", "935", :: logOut, getSomeGoodHardcodedAlerts() )
+                        recreate()
                     }
                 }
-                AppContent()
             }
         }
     }
@@ -76,17 +83,15 @@ fun logOut(context: Context) {
     val editor = sharePref.edit()
     editor.remove("userEmail")
     editor.apply()
+
+    (context as ComponentActivity).recreate()
 }
 
 @Composable
 fun AppContent() {
-    var loggedIn by remember { mutableStateOf(false) }
+    var loggedIn by remember { mutableStateOf(true) }
 
-    if (!loggedIn) {
-        LoginScreen(onLoginSuccess = { success ->
-            loggedIn = success
-        })
-    } else {
+    if (loggedIn) {
         HomeScreen(
             userName = "José Leal",
             internalNumber = "935",
@@ -97,7 +102,7 @@ fun AppContent() {
 }
 
 @Composable
-fun LoginScreen(onLoginSuccess: (Boolean) -> Unit) {
+fun LoginScreen(onLoginSuccess: (Boolean) -> Unit) { 
     var cbNumber by remember { mutableStateOf("") }
     var internalNumber by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -155,12 +160,7 @@ fun LoginScreen(onLoginSuccess: (Boolean) -> Unit) {
 }
 
 @Composable
-fun HomeScreen(
-    userName: String,
-    internalNumber: String,
-    onLogout: (Context) -> Unit,
-    alerts: List<Alert>
-) {
+fun HomeScreen(userName: String, internalNumber: String, logoutUser: (Context) -> Unit, alerts: List<Alert>) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -170,9 +170,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TopNavigationBar(userName = userName, internalNumber = internalNumber) {
-                //goes to profile?
-            }
+            TopNavigationBar(userName = userName, internalNumber = internalNumber, logoutUser = logoutUser)
             Spacer(modifier = Modifier.height(16.dp))
             AlertList(alerts = alerts)
         }
@@ -348,10 +346,19 @@ fun EstimatedTimeOfArrival(onDismiss: () -> Unit) {
     }
 }
 
+fun logOut(context: Context){
+    val sharePref = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+    val editor = sharePref.edit()
+    editor.remove("userEmail")
+    editor.apply()
+
+    (context as ComponentActivity).recreate()
+}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopNavigationBar(userName: String, internalNumber: String, onUserNameClicked: () -> Unit) {
+fun TopNavigationBar(userName: String, internalNumber: String, logoutUser: (Context) -> Unit) {
     val scrollBehaviour = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    var showLogoutDialog by remember { mutableStateOf(false)}
     Scaffold(
         modifier = Modifier
             .nestedScroll(scrollBehaviour.nestedScrollConnection)
@@ -376,10 +383,12 @@ fun TopNavigationBar(userName: String, internalNumber: String, onUserNameClicked
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /*TODO*/ }) { //again... what is this bro
+                    IconButton(onClick = {
+                        showLogoutDialog = true
+                    }) { //again... what is this bro
                         Icon(
-                            imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description again dude"
+                            imageVector = Icons.Filled.Home,
+                            contentDescription = "Logout"
                         )
                     }
                 },
@@ -388,9 +397,30 @@ fun TopNavigationBar(userName: String, internalNumber: String, onUserNameClicked
         },
     ) { innerPadding ->
         ScrollContent(innerPadding)
+
+        if (showLogoutDialog){
+            AlertDialog(
+            onDismissRequest = {showLogoutDialog = false},
+                title = {
+                    Text(text = "Confirm Logout")},
+                text ={ Text(text = "Are you sure you want to log out?")},
+                confirmButton = {
+                    Button(onClick =  {
+                        logoutUser(LocalContext.current)
+                    showLogoutDialog = false
+                    }) {
+                    Text(text = "Logout")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = {showLogoutDialog = false}) {
+                        Text(text = "Cancel")
+                    }
+                }
+            )
+        }
     }
 }
-
 @Composable
 fun ScrollContent(innerPadding: PaddingValues) {
     Column(
@@ -402,7 +432,7 @@ fun ScrollContent(innerPadding: PaddingValues) {
 }
 
 @Composable
-fun OptionScreen(onLogout: () -> Unit) {
+fun OptionScreen() {
     Surface(
         color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxSize()
@@ -413,7 +443,7 @@ fun OptionScreen(onLogout: () -> Unit) {
             verticalArrangement = Arrangement.Center
         ) {
             Button(
-                onClick = { onLogout() },
+                onClick = { },
                 modifier = Modifier.padding(8.dp)
             ) {
                 Text(text = "Log out")
@@ -422,12 +452,7 @@ fun OptionScreen(onLogout: () -> Unit) {
     }
 }
 
-private fun loginUser(
-    context: Context,
-    internalNumber: String,
-    cbNumber: String,
-    password: String
-): Boolean {
+private fun loginUser( context: Context, internalNumber: String, cbNumber: String, password: String): Boolean {
     val auth = FirebaseAuth.getInstance()
     val sharedPref = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
     val editor = sharedPref.edit()
@@ -468,7 +493,7 @@ fun AlertListPreview() {
 @Preview
 @Composable
 fun OptionScreenPreview() {
-    OptionScreen(onLogout = {})
+    OptionScreen()
 }
 
 @Preview
