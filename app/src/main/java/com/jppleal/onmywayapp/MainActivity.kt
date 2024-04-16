@@ -2,6 +2,7 @@ package com.jppleal.onmywayapp
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.widget.Space
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -50,9 +51,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
 import org.w3c.dom.Text
+import androidx.compose.foundation.layout.Box as Box1
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,15 +81,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
-
-fun logOut(context: Context) {
-    val sharePref = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-    val editor = sharePref.edit()
-    editor.remove("userEmail")
-    editor.apply()
-
-    (context as ComponentActivity).recreate()
 }
 
 @Composable
@@ -170,7 +166,7 @@ fun HomeScreen(userName: String, internalNumber: String, logoutUser: (Context) -
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TopNavigationBar(userName = userName, internalNumber = internalNumber, logoutUser = logoutUser)
+            TopNavigationBar(userName = userName, internalNumber = internalNumber)
             Spacer(modifier = Modifier.height(16.dp))
             AlertList(alerts = alerts)
         }
@@ -252,7 +248,6 @@ fun AlertItem(alert: Alert) {
             if (showDialog) {
                 EstimatedTimeOfArrival(onDismiss = { showDialog = false })
             }
-
             Button(
                 onClick = { /*TODO*/ },
                 modifier = Modifier
@@ -345,20 +340,11 @@ fun EstimatedTimeOfArrival(onDismiss: () -> Unit) {
         }
     }
 }
-
-fun logOut(context: Context){
-    val sharePref = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-    val editor = sharePref.edit()
-    editor.remove("userEmail")
-    editor.apply()
-
-    (context as ComponentActivity).recreate()
-}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopNavigationBar(userName: String, internalNumber: String, logoutUser: (Context) -> Unit) {
+fun TopNavigationBar(userName: String, internalNumber: String) {
     val scrollBehaviour = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-    var showLogoutDialog by remember { mutableStateOf(false)}
+    val showDialog = remember { mutableStateOf(false)}
     Scaffold(
         modifier = Modifier
             .nestedScroll(scrollBehaviour.nestedScrollConnection)
@@ -383,9 +369,7 @@ fun TopNavigationBar(userName: String, internalNumber: String, logoutUser: (Cont
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        showLogoutDialog = true
-                    }) { //again... what is this bro
+                    IconButton(onClick = {showDialog.value = true}) {
                         Icon(
                             imageVector = Icons.Filled.Home,
                             contentDescription = "Logout"
@@ -397,30 +381,58 @@ fun TopNavigationBar(userName: String, internalNumber: String, logoutUser: (Cont
         },
     ) { innerPadding ->
         ScrollContent(innerPadding)
+    }
 
-        if (showLogoutDialog){
-            AlertDialog(
-            onDismissRequest = {showLogoutDialog = false},
-                title = {
-                    Text(text = "Confirm Logout")},
-                text ={ Text(text = "Are you sure you want to log out?")},
-                confirmButton = {
-                    Button(onClick =  {
-                        logoutUser(LocalContext.current)
-                    showLogoutDialog = false
-                    }) {
-                    Text(text = "Logout")
+    if(showDialog.value){
+        LogOutDialog(
+            onDismiss = {
+                showDialog.value = false },
+            onConfirmation = {
+                showDialog.value=true
+            }
+        )
+    }
+}
+
+@Composable
+fun LogOutDialog(onDismiss: () -> Unit, onConfirmation: () -> Unit){
+    val context = LocalContext.current
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text("De certeza que pretende fazer logout?")
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(modifier = Modifier.padding(0.dp,1.dp,0.dp,1.dp)) {
+                    //there's no segmented buttons on compose
+                    TextButton(onClick = {
+                        Firebase.auth.signOut()
+                        onConfirmation()
+                        logOut(context)},
+                        modifier = Modifier
+                            .padding(8.dp)){
+                        Text("Sim")
                     }
-                },
-                dismissButton = {
-                    Button(onClick = {showLogoutDialog = false}) {
-                        Text(text = "Cancel")
+                    TextButton(onClick = { onDismiss() },
+                        modifier = Modifier
+                            .padding(8.dp)){
+                        Text("Não")
                     }
                 }
-            )
+            }
         }
     }
 }
+
 @Composable
 fun ScrollContent(innerPadding: PaddingValues) {
     Column(
@@ -451,23 +463,56 @@ fun OptionScreen() {
         }
     }
 }
+private fun logOut(context: Context){
+    val sharePref = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+    val editor = sharePref.edit()
+    editor.remove("userEmail")
+    editor.apply()
+
+    (context as ComponentActivity).recreate()
+}
 
 private fun loginUser( context: Context, internalNumber: String, cbNumber: String, password: String): Boolean {
     val auth = FirebaseAuth.getInstance()
-    val sharedPref = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-    val editor = sharedPref.edit()
-    return try {
-        val email = "$internalNumber@$cbNumber.com"
-        val result = auth.signInWithEmailAndPassword(email, password)
-        Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
-        editor.putString("userEmail", email)
-        editor.putString("internalNum", internalNumber)
-        editor.putString("numCB", cbNumber)
-        editor.apply()
-        true
-    } catch (e: Exception) {
-        Toast.makeText(context, "Authentication failed: ${e.message}", Toast.LENGTH_SHORT).show()
-        false
+    //val sharedPref = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+    //val editor = sharedPref.edit()
+    val email = "$internalNumber@$cbNumber.com"
+    //val result = auth.signInWithEmailAndPassword(email, password)
+    var pass =  false
+    FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                //auth success
+                val currentUser = FirebaseAuth.getInstance().currentUser
+                currentUser?.uid?.let { userId ->
+                    val db = FirebaseFirestore.getInstance()
+                    val userRef = db.collection("users").document(userId)
+
+                    userRef.get().addOnSuccessListener { documentSnapshot ->
+                        if (documentSnapshot.exists()) {
+                            //if user exists
+                            Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                            pass = true
+                        } else {
+                            Toast.makeText(context, "User not registed.", Toast.LENGTH_SHORT).show()
+                        }
+                    }.addOnFailureListener { exception ->
+                        Toast.makeText(context, "Failed login." + exception, Toast.LENGTH_LONG).show()
+                        Log.e("FirebaseAuth", "Error. ", exception)
+                    }
+                }
+            } else {
+                Toast.makeText(context, "Autenticathion failed.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    if (pass) {
+        //editor.putString("userEmail", email)
+        //editor.putString("internalNum", internalNumber)
+        //editor.putString("numCB", cbNumber)
+        //editor.apply()
+        return true
+    }else{
+        return false
     }
 }
 
@@ -500,6 +545,12 @@ fun OptionScreenPreview() {
 @Composable
 fun EstimatedTimeOfArrivalPreview() {
     EstimatedTimeOfArrival(onDismiss = { true })
+}
+
+@Preview
+@Composable
+fun LogOutDialogPreview(){
+    LogOutDialog(onDismiss = {false}, onConfirmation = {true})
 }
 
 //defined Alert data class
