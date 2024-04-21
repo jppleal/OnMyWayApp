@@ -2,23 +2,20 @@ package com.jppleal.onmywayapp
 
 import android.content.Context
 import android.os.Bundle
+import android.os.CancellationSignal.OnCancelListener
 import android.util.Log
-import android.widget.Space
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,14 +47,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
-import org.w3c.dom.Text
-import androidx.compose.foundation.layout.Box as Box1
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +66,8 @@ class MainActivity : ComponentActivity() {
         FirebaseApp.initializeApp(this)
         val sharePref = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
         val userEmail = sharePref.getString("userEmail", "")
+
+
         if (!userEmail.isNullOrEmpty()) {
             setContent {
                 AppContent()
@@ -82,23 +85,76 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 @Composable
-fun AppContent() {
-    var loggedIn by remember { mutableStateOf(true) }
+fun NavHost(
+    navController: NavController,
+    startDestination: String,
+    modifier: Modifier,
+    builder: NavGraphBuilder.() -> Unit
+): Unit {
 
-    if (loggedIn) {
-        HomeScreen(
-            userName = "José Leal",
-            internalNumber = "935",
-            ::logOut,
-            getSomeGoodHardcodedAlerts()
-        )
-    }
+}
+
+enum class Route {
+    LogInScreen,
+    HomeScreen,
+    OptionsScreen
+
 }
 
 @Composable
-fun LoginScreen(onLoginSuccess: (Boolean) -> Unit) { 
+fun AppContent() {
+
+    val navController = rememberNavController()
+
+    var loggedIn by remember { mutableStateOf(false) }
+    Scaffold { padding ->
+        NavHost(
+            navController = navController,
+            startDestination = if (loggedIn) Route.HomeScreen.name else Route.LogInScreen.name,
+            modifier = Modifier.padding(padding)
+        )
+        {
+            composable(route = Route.LogInScreen.name) {
+                LoginScreen(
+                    onLoginSuccess = { success ->
+                        if (success) {
+                            savedLoggedInState(true)
+                            navController.navigate(Route.HomeScreen.name)
+                        }
+                    }
+                )
+            }
+            composable(route = Route.HomeScreen.name) {
+                HomeScreen(
+                    userName = "",
+                    internalNumber = "",
+                    logoutUser = {
+                        savedLoggedInState(false)
+                        navController.navigate(Route.LogInScreen.name)
+                    },
+                    alerts = getSomeGoodHardcodedAlerts() // I can load the alerts that are up in here
+                )
+            }
+            composable(route = Route.OptionsScreen.name) {
+                OptionScreen()
+            }
+
+        }
+
+    }
+}
+
+private fun savedLoggedInState(loggedIn: Boolean) {
+
+}
+
+private fun isLoggedIn(): Boolean {
+    return true
+}
+
+@Composable
+fun LoginScreen(onLoginSuccess: (Boolean) -> Unit) {
     var cbNumber by remember { mutableStateOf("") }
     var internalNumber by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -141,22 +197,50 @@ fun LoginScreen(onLoginSuccess: (Boolean) -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = {
-                    if (loginUser(context, internalNumber, cbNumber, password)) {
-                        onLoginSuccess(true)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Log In")
-            }
+            LoginButton(
+                onLoginSuccess = onLoginSuccess,
+                context = context,
+                cbNumber = cbNumber,
+                internalNumber = internalNumber,
+                password = password
+            )
         }
     }
 }
 
 @Composable
-fun HomeScreen(userName: String, internalNumber: String, logoutUser: (Context) -> Unit, alerts: List<Alert>) {
+fun LoginButton(
+    onLoginSuccess: (Boolean) -> Unit,
+    context: Context,
+    cbNumber: String,
+    internalNumber: String,
+    password: String
+) {
+    val coroutineScope = rememberCoroutineScope()
+
+    Button(
+        onClick = {
+            coroutineScope.launch {
+                val loggedIn = withContext(Dispatchers.IO) {
+                    loginUser(context, cbNumber, internalNumber, password)
+                }
+                onLoginSuccess(loggedIn)
+            }
+        },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(text = "Log In")
+    }
+}
+
+@Composable
+fun HomeScreen(
+    userName: String,
+    internalNumber: String,
+    logoutUser: (Context) -> Unit,
+    alerts: List<Alert>
+) {
+    val dummyFunction: () -> Unit = {}
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -166,7 +250,7 @@ fun HomeScreen(userName: String, internalNumber: String, logoutUser: (Context) -
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TopNavigationBar(userName = userName, internalNumber = internalNumber)
+            TopNavigationBar(userName = userName, internalNumber = internalNumber, onLogoutClick = dummyFunction)
             Spacer(modifier = Modifier.height(16.dp))
             AlertList(alerts = alerts)
         }
@@ -233,7 +317,7 @@ fun AlertItem(alert: Alert) {
             horizontalArrangement = Arrangement.Center
         ) { //Column or Row?
             Button(
-                onClick = { showDialog = true},
+                onClick = { showDialog = true },
                 modifier = Modifier
                     .widthIn()
                     .padding(5.dp),
@@ -283,53 +367,64 @@ fun EstimatedTimeOfArrival(onDismiss: () -> Unit) {
             ) {
                 Text("Tempo previsto de chegada: XX minutos")/*TODO*/ //indicar o tempo estimado com base na localização ou morada pré definida
                 Spacer(modifier = Modifier.height(2.dp))
-                Row(modifier = Modifier.padding(0.dp,1.dp,0.dp,1.dp)) {
+                Row(modifier = Modifier.padding(0.dp, 1.dp, 0.dp, 1.dp)) {
                     //there's no segmented buttons on compose
-                    TextButton(onClick = { selectedNumber = 5 },
-                    modifier = Modifier
-                        .padding(horizontal = 1.dp, vertical = 1.dp)
-                        .background(
-                            if (selectedNumber == 5) Color.LightGray else Color.Transparent
-                        )){
+                    TextButton(
+                        onClick = { selectedNumber = 5 },
+                        modifier = Modifier
+                            .padding(horizontal = 1.dp, vertical = 1.dp)
+                            .background(
+                                if (selectedNumber == 5) Color.LightGray else Color.Transparent
+                            )
+                    ) {
                         Text("5")
                     }
-                    Divider(color = Color.LightGray,
+                    Divider(
+                        color = Color.LightGray,
                         modifier = Modifier
                             .height(40.dp)
                             .width(1.dp),
                     )
-                    TextButton(onClick = { selectedNumber = 10 },
+                    TextButton(
+                        onClick = { selectedNumber = 10 },
                         modifier = Modifier
                             .padding(horizontal = 1.dp, vertical = 1.dp)
                             .background(
                                 if (selectedNumber == 10) Color.LightGray else Color.Transparent
-                            )){
+                            )
+                    ) {
                         Text("10")
                     }
-                    Divider(color = Color.LightGray,
+                    Divider(
+                        color = Color.LightGray,
                         modifier = Modifier
                             .height(40.dp)
                             .width(1.dp),
                     )
-                    TextButton(onClick = { selectedNumber = 15 },
+                    TextButton(
+                        onClick = { selectedNumber = 15 },
                         modifier = Modifier
                             .padding(horizontal = 1.dp, vertical = 1.dp)
                             .background(
                                 if (selectedNumber == 15) Color.LightGray else Color.Transparent
-                            )){
+                            )
+                    ) {
                         Text("15")
                     }
-                    Divider(color = Color.LightGray,
+                    Divider(
+                        color = Color.LightGray,
                         modifier = Modifier
                             .height(40.dp)
                             .width(1.dp),
-                         )
-                    TextButton(onClick = { selectedNumber = 16 },
+                    )
+                    TextButton(
+                        onClick = { selectedNumber = 16 },
                         modifier = Modifier
                             .padding(horizontal = 1.dp, vertical = 1.dp)
                             .background(
                                 if (selectedNumber == 16) Color.LightGray else Color.Transparent
-                            )){
+                            )
+                    ) {
                         Text("+15")
                     }
                 }
@@ -340,11 +435,12 @@ fun EstimatedTimeOfArrival(onDismiss: () -> Unit) {
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopNavigationBar(userName: String, internalNumber: String) {
+fun TopNavigationBar(userName: String, internalNumber: String, onLogoutClick: () -> Unit) {
     val scrollBehaviour = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-    val showDialog = remember { mutableStateOf(false)}
+    val showDialog = remember { mutableStateOf(false) }
     Scaffold(
         modifier = Modifier
             .nestedScroll(scrollBehaviour.nestedScrollConnection)
@@ -362,16 +458,10 @@ fun TopNavigationBar(userName: String, internalNumber: String) {
                         overflow = TextOverflow.Ellipsis
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = { /*TODO*/ }) { //what is this bro
-                        //Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        //contentDescription = "Localized description")
-                    }
-                },
                 actions = {
-                    IconButton(onClick = {showDialog.value = true}) {
+                    IconButton(onClick = { showDialog.value = true }) {
                         Icon(
-                            imageVector = Icons.Filled.Home,
+                            imageVector = Icons.Filled.ExitToApp,
                             contentDescription = "Logout"
                         )
                     }
@@ -383,19 +473,26 @@ fun TopNavigationBar(userName: String, internalNumber: String) {
         ScrollContent(innerPadding)
     }
 
-    if(showDialog.value){
+    if (showDialog.value) {
         LogOutDialog(
             onDismiss = {
-                showDialog.value = false },
+                showDialog.value = false
+            },
             onConfirmation = {
-                showDialog.value=true
+                Firebase.auth.signOut()
+
+                showDialog.value = false
+                onLogoutClick()
+            },
+            onCancel = {
+                showDialog.value = false //Dismiss dialog without logging out
             }
         )
     }
 }
 
 @Composable
-fun LogOutDialog(onDismiss: () -> Unit, onConfirmation: () -> Unit){
+fun LogOutDialog(onDismiss: () -> Unit, onConfirmation: () -> Unit, onCancel: () -> Unit) {
     val context = LocalContext.current
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -412,19 +509,21 @@ fun LogOutDialog(onDismiss: () -> Unit, onConfirmation: () -> Unit){
             ) {
                 Text("De certeza que pretende fazer logout?")
                 Spacer(modifier = Modifier.height(2.dp))
-                Row(modifier = Modifier.padding(0.dp,1.dp,0.dp,1.dp)) {
+                Row(modifier = Modifier.padding(0.dp, 1.dp, 0.dp, 1.dp)) {
                     //there's no segmented buttons on compose
-                    TextButton(onClick = {
-                        Firebase.auth.signOut()
-                        onConfirmation()
-                        logOut(context)},
+                    TextButton(
+                        onClick =
+                        onConfirmation,
                         modifier = Modifier
-                            .padding(8.dp)){
+                            .padding(8.dp)
+                    ) {
                         Text("Sim")
                     }
-                    TextButton(onClick = { onDismiss() },
+                    TextButton(
+                        onClick = onCancel,
                         modifier = Modifier
-                            .padding(8.dp)){
+                            .padding(8.dp)
+                    ) {
                         Text("Não")
                     }
                 }
@@ -463,7 +562,8 @@ fun OptionScreen() {
         }
     }
 }
-private fun logOut(context: Context){
+
+private fun logOut(context: Context) {
     val sharePref = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
     val editor = sharePref.edit()
     editor.remove("userEmail")
@@ -472,47 +572,39 @@ private fun logOut(context: Context){
     (context as ComponentActivity).recreate()
 }
 
-private fun loginUser( context: Context, internalNumber: String, cbNumber: String, password: String): Boolean {
+suspend fun loginUser(
+    context: Context,
+    internalNumber: String,
+    cbNumber: String,
+    password: String
+): Boolean {
     val auth = FirebaseAuth.getInstance()
-    //val sharedPref = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-    //val editor = sharedPref.edit()
     val email = "$internalNumber@$cbNumber.com"
-    //val result = auth.signInWithEmailAndPassword(email, password)
-    var pass =  false
-    FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
-        .addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                //auth success
-                val currentUser = FirebaseAuth.getInstance().currentUser
-                currentUser?.uid?.let { userId ->
-                    val db = FirebaseFirestore.getInstance()
-                    val userRef = db.collection("users").document(userId)
 
-                    userRef.get().addOnSuccessListener { documentSnapshot ->
-                        if (documentSnapshot.exists()) {
-                            //if user exists
-                            Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
-                            pass = true
-                        } else {
-                            Toast.makeText(context, "User not registed.", Toast.LENGTH_SHORT).show()
-                        }
-                    }.addOnFailureListener { exception ->
-                        Toast.makeText(context, "Failed login." + exception, Toast.LENGTH_LONG).show()
-                        Log.e("FirebaseAuth", "Error. ", exception)
-                    }
-                }
+    return try {
+        val result = auth.signInWithEmailAndPassword(email, password).await()
+        val currentUser = result.user
+        if (currentUser != null) {
+            val db = FirebaseFirestore.getInstance()
+            val userRef = db.collection("users").document(currentUser.uid).get().await()
+            if (userRef.exists()) {
+                //user exists, log in should be possible
+                Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                true
             } else {
-                Toast.makeText(context, "Autenticathion failed.", Toast.LENGTH_SHORT).show()
+                //User is not registered but it tried to log in
+                Toast.makeText(context, "User not registered.", Toast.LENGTH_SHORT).show()
+                false
             }
+        } else {
+            //Authentication failed, but able to connect to firebase
+            Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
+            false
         }
-    if (pass) {
-        //editor.putString("userEmail", email)
-        //editor.putString("internalNum", internalNumber)
-        //editor.putString("numCB", cbNumber)
-        //editor.apply()
-        return true
-    }else{
-        return false
+    } catch (e: Exception) {
+        Toast.makeText(context, "Failed login: ${e.message}", Toast.LENGTH_SHORT).show()
+        Log.e("FirebaseAuth", "Error: ${e.message}", e)
+        false
     }
 }
 
@@ -549,8 +641,8 @@ fun EstimatedTimeOfArrivalPreview() {
 
 @Preview
 @Composable
-fun LogOutDialogPreview(){
-    LogOutDialog(onDismiss = {false}, onConfirmation = {true})
+fun LogOutDialogPreview() {
+    LogOutDialog(onDismiss = { false }, onConfirmation = { true }, onCancel = { true })
 }
 
 //defined Alert data class
