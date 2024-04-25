@@ -1,5 +1,7 @@
 package com.jppleal.onmywayapp
 
+import android.app.Activity
+import android.content.ContentProviderClient
 import android.content.Context
 import android.os.Bundle
 import android.os.CancellationSignal.OnCancelListener
@@ -35,6 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.autoSaver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,9 +53,16 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthCredential
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
@@ -61,27 +71,26 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
+    private lateinit var googleSignInClient: GoogleSignInClient
+    private val  RC_SIGN_IN = 1001
+    private lateinit var auth: FirebaseAuth
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        FirebaseApp.initializeApp(this)
+        //FirebaseApp.initializeApp(this)
         val sharePref = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
         val userEmail = sharePref.getString("userEmail", "")
+        auth = FirebaseAuth.getInstance()
 
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.client_ID))
+            .requestEmail()
+            .build()
 
-        if (!userEmail.isNullOrEmpty()) {
-            setContent {
-                AppContent()
-                HomeScreen("José Leal", "935", ::logOut, getSomeGoodHardcodedAlerts())
-            }
-        } else {
-            setContent {
-                LoginScreen { success ->
-                    if (success) {
-                        //     HomeScreen("José Leal", "935", :: logOut, getSomeGoodHardcodedAlerts() )
-                        recreate()
-                    }
-                }
-            }
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+        setContent{
+            val navController = rememberNavController()
+            AppContent(navController = navController)
         }
     }
 }
@@ -103,24 +112,24 @@ enum class Route {
 }
 
 @Composable
-fun AppContent() {
-
-    val navController = rememberNavController()
-
-    var loggedIn by remember { mutableStateOf(false) }
+fun AppContent(navController: NavController) {
     Scaffold { padding ->
         NavHost(
             navController = navController,
-            startDestination = if (loggedIn) Route.HomeScreen.name else Route.LogInScreen.name,
+            startDestination = if (isLoggedIn()) Route.HomeScreen.name else Route.LogInScreen.name,
             modifier = Modifier.padding(padding)
         )
         {
             composable(route = Route.LogInScreen.name) {
                 LoginScreen(
-                    onLoginSuccess = { success ->
-                        if (success) {
+                    googleSignInClient = googleSignInClient,
+                    requestCode = RC_SIGN_IN,
+                    auth = auth,
+                    navController = navController,
+                    onLoginSuccess = {
+                        success ->
+                        if (success){
                             savedLoggedInState(true)
-                            navController.navigate(Route.HomeScreen.name)
                         }
                     }
                 )
@@ -154,11 +163,11 @@ private fun isLoggedIn(): Boolean {
 }
 
 @Composable
-fun LoginScreen(onLoginSuccess: (Boolean) -> Unit) {
-    var cbNumber by remember { mutableStateOf("") }
-    var internalNumber by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var context = LocalContext.current
+fun LoginScreen(googleSignInClient: GoogleSignInClient, requestCode: Int, auth: FirebaseAuth,  navController: NavController, onLoginSuccess: (Boolean) -> Unit) {
+    val context = LocalContext.current
+    val signInResult = remember {
+        mutableStateOf<Task<GoogleSignInAccount>?>(null)}
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -175,62 +184,54 @@ fun LoginScreen(onLoginSuccess: (Boolean) -> Unit) {
                 contentDescription = "Logo",
                 modifier = Modifier.size(300.dp)
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = cbNumber,
-                onValueChange = { cbNumber = it },
-                label = { Text(text = "Nº CB") },
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(
+                onClick = {
+                    val signInIntent = googleSignInClient.signInIntent
+                    (context as Activity).startActivityForResult(signInIntent, requestCode)
+                },
                 modifier = Modifier.fillMaxWidth()
-            )
+            ) {
+                Text(text = "Log In with Google")
+            }
             Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = internalNumber,
-                onValueChange = { internalNumber = it },
-                label = { Text(text = "Internal Num") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text(text = "Password") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            LoginButton(
-                onLoginSuccess = onLoginSuccess,
-                context = context,
-                cbNumber = cbNumber,
-                internalNumber = internalNumber,
-                password = password
-            )
+            Button(
+                onClick = {
+                    /*TODO*/
+                }, modifier = Modifier.fillMaxWidth()
+            ){
+                Text(text = "Log In with Microsoft (not available)")
+            }
+        }
+    }
+
+    val account = signInResult.value?.result
+    if(account != null){
+        firebaseAuthWithGoogle(account, auth, navController, onLoginSuccess)
+    }else{
+        signInResult.value?.addOnCompleteListener{ task ->
+            if (task.isSuccessful){
+                val result = task.result
+                firebaseAuthWithGoogle(result, auth, navController, onLoginSuccess)
+            }else{
+                val exception = task.exception
+            }
         }
     }
 }
 
-@Composable
-fun LoginButton(
-    onLoginSuccess: (Boolean) -> Unit,
-    context: Context,
-    cbNumber: String,
-    internalNumber: String,
-    password: String
-) {
-    val coroutineScope = rememberCoroutineScope()
-
-    Button(
-        onClick = {
-            coroutineScope.launch {
-                val loggedIn = withContext(Dispatchers.IO) {
-                    loginUser(context, cbNumber, internalNumber, password)
-                }
-                onLoginSuccess(loggedIn)
+private fun firebaseAuthWithGoogle(acct: GoogleSignInAccount?, auth: FirebaseAuth, navController: NavController, onLoginSuccess: (Boolean) -> Unit){
+    val credential = GoogleAuthProvider.getCredential(acct?.idToken, null)
+    auth.signInWithCredential(credential)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful){
+                val user = auth.currentUser
+                onLoginSuccess(true)
+                navController.navigate(Route.HomeScreen.name)
+            }else{
+                Log.e("Login","Google sign in failed", task.exception)
             }
-        },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(text = "Log In")
-    }
+        }
 }
 
 @Composable
@@ -572,46 +573,11 @@ private fun logOut(context: Context) {
     (context as ComponentActivity).recreate()
 }
 
-suspend fun loginUser(
-    context: Context,
-    internalNumber: String,
-    cbNumber: String,
-    password: String
-): Boolean {
-    val auth = FirebaseAuth.getInstance()
-    val email = "$internalNumber@$cbNumber.com"
-
-    return try {
-        val result = auth.signInWithEmailAndPassword(email, password).await()
-        val currentUser = result.user
-        if (currentUser != null) {
-            val db = FirebaseFirestore.getInstance()
-            val userRef = db.collection("users").document(currentUser.uid).get().await()
-            if (userRef.exists()) {
-                //user exists, log in should be possible
-                Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
-                true
-            } else {
-                //User is not registered but it tried to log in
-                Toast.makeText(context, "User not registered.", Toast.LENGTH_SHORT).show()
-                false
-            }
-        } else {
-            //Authentication failed, but able to connect to firebase
-            Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
-            false
-        }
-    } catch (e: Exception) {
-        Toast.makeText(context, "Failed login: ${e.message}", Toast.LENGTH_SHORT).show()
-        Log.e("FirebaseAuth", "Error: ${e.message}", e)
-        false
-    }
-}
 
 @Preview
 @Composable
 fun LoginScreenPreview() {
-    AppContent()
+    LoginScreen()
 }
 
 @Preview

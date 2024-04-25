@@ -14,5 +14,6 @@
     <string name="invalid_password">Password must be >5 characters</string>
     <string name="login_failed">"Login failed"</string>
     <string name="prompt_email">"Email"</string>
-    <string name="action_sign_in_short">"Sign In</string>
+    <string name="action_sign_in_short">Sign In</string>
+    <string name="client_ID">201893866882-df8h6smitjhmk2sgepa7ebbo7g4i6hh1.apps.googleusercontent.com</string>
 </resources>

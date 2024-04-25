@@ -1,26 +1,36 @@
 {
   "project_info": {
-    "project_number": "970895939049",
-    "project_id": "on-my-way-cb1144",
-    "storage_bucket": "on-my-way-cb1144.appspot.com"
+    "project_number": "201893866882",
+    "project_id": "on-my-way-app-3ixreu",
+    "storage_bucket": "on-my-way-app-3ixreu.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:970895939049:android:776eb2144ac849d06b6778",
+        "mobilesdk_app_id": "1:201893866882:android:164de9d01895c6b7b9339b",
         "android_client_info": {
           "package_name": "com.jppleal.onmywayapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "201893866882-df8h6smitjhmk2sgepa7ebbo7g4i6hh1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyC35xtG6srUF1dm1EyIEUEQbuMKMt5M6aA"
+          "current_key": "AIzaSyA7dAMii1QQ_4xWku-fhcWxoT68mYHDpqU"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "201893866882-df8h6smitjhmk2sgepa7ebbo7g4i6hh1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
