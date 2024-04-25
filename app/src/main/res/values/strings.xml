@@ -16,4 +16,5 @@
     <string name="prompt_email">"Email"</string>
     <string name="action_sign_in_short">Sign In</string>
     <string name="client_ID">201893866882-df8h6smitjhmk2sgepa7ebbo7g4i6hh1.apps.googleusercontent.com</string>
+    <string name="title_activity_main2">MainActivity2</string>
 </resources>

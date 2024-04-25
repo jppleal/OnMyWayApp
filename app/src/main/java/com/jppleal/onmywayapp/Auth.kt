@@ -1,10 +1,7 @@
 package com.jppleal.onmywayapp
 
 import android.content.Context
-import android.provider.ContactsContract.CommonDataKinds.Email
 import androidx.activity.ComponentActivity
-import com.jppleal.onmywayapp.data.model.User
-import java.net.PasswordAuthentication
 
 fun loginUser(email: String, password: String): Int? {
     if(userPasswords != null && userPasswords[email] == password){

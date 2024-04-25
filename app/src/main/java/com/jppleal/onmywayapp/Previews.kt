@@ -1,18 +1,14 @@
 package com.jppleal.onmywayapp
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.jppleal.onmywayapp.ui.theme.OnMyWayAppTheme
 
-@Composable
+/*@Composable
 fun PreviewContent(navController: NavController) {
     OnMyWayAppTheme {
         NavGraph(navController = navController, modifier = Modifier.fillMaxSize())
     }
-}
+}*/
 @Preview
 @Composable
 fun LoginScreenPreview() {
@@ -39,6 +35,7 @@ fun AlertListPreview() {
 fun OptionScreenPreview() {
     val navController = rememberNavController()
     OptionScreen(navController)
+
 }
 
 @Preview
@@ -51,4 +48,10 @@ fun EstimatedTimeOfArrivalPreview() {
 @Composable
 fun LogOutDialogPreview() {
     LogOutDialog(onDismiss = { false }, onConfirmation = { true }, onCancel = { true })
+}
+@Preview
+@Composable
+fun CredentialsFormPreview(){
+    val  navController = rememberNavController()
+    CredentialsForm(navController)
 }

@@ -1,7 +1,5 @@
 package com.jppleal.onmywayapp.data.model
 
-import android.text.BoringLayout
-
 data class Alert(
     val id: Int,
     val message: String,
