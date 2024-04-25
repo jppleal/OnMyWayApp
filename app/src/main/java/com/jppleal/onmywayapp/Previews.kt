@@ -1,0 +1,54 @@
+package com.jppleal.onmywayapp
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.jppleal.onmywayapp.ui.theme.OnMyWayAppTheme
+
+@Composable
+fun PreviewContent(navController: NavController) {
+    OnMyWayAppTheme {
+        NavGraph(navController = navController, modifier = Modifier.fillMaxSize())
+    }
+}
+@Preview
+@Composable
+fun LoginScreenPreview() {
+    val navController = rememberNavController()
+    LoginScreen(navController = navController)
+}
+
+@Preview
+@Composable
+fun HomeScreenPreview() {
+    val navController = rememberNavController()
+    HomeScreen("José Leal", "935", getSomeGoodHardcodedAlerts(), navController)
+}
+
+@Preview
+@Composable
+fun AlertListPreview() {
+    val alerts = getSomeGoodHardcodedAlerts()
+    AlertList(alerts = alerts)
+}
+
+@Preview
+@Composable
+fun OptionScreenPreview() {
+    val navController = rememberNavController()
+    OptionScreen(navController)
+}
+
+@Preview
+@Composable
+fun EstimatedTimeOfArrivalPreview() {
+    EstimatedTimeOfArrival(onDismiss = { true })
+}
+
+@Preview
+@Composable
+fun LogOutDialogPreview() {
+    LogOutDialog(onDismiss = { false }, onConfirmation = { true }, onCancel = { true })
+}
