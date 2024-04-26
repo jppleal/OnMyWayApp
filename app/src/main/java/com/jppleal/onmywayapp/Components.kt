@@ -1,5 +1,6 @@
 package com.jppleal.onmywayapp
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,8 +36,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.navigation.NavController
 import com.jppleal.onmywayapp.data.model.Alert
 
 
@@ -55,6 +57,8 @@ import com.jppleal.onmywayapp.data.model.Alert
 fun TopNavigationBar(
     userName: String,
     internalNumber: String,
+    navController : NavController,
+    context: Context
 ) {
     val scrollBehaviour = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val showDialog = remember { mutableStateOf(false) }
@@ -77,7 +81,8 @@ fun TopNavigationBar(
                 },
                 actions = {
                     IconButton(onClick = {
-                        /*TODO*/
+                        navController.navigate(Screen.LogInScreen.route)
+                        logOut(context)
                     }) {
                         Icon(
                             imageVector = Icons.Filled.ExitToApp,

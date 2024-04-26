@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.jppleal.onmywayapp.ui.theme.OnMyWayAppTheme
 
 sealed class Screen(val route: String){
@@ -16,9 +15,9 @@ sealed class Screen(val route: String){
 }
 
 @Composable
-fun OnMyWayApp(navController: NavHostController) {
+fun OnMyWayApp(navController: NavHostController, isLoggedIn : Boolean) {
     OnMyWayAppTheme {
-        NavHost(navController = navController, startDestination = Screen.LogInScreen.route) {
+        NavHost(navController = navController, startDestination = if(isLoggedIn)Screen.HomeScreen.route else Screen.LogInScreen.route) {
             composable(Screen.LogInScreen.route) {
                 LoginScreen(navController)
             }
@@ -35,10 +34,10 @@ fun OnMyWayApp(navController: NavHostController) {
     }
 }
 
-@Composable
+/*@Composable
 fun MyApp() {
     val navController = rememberNavController()
     OnMyWayApp(navController)
-}
+}*/
 
 

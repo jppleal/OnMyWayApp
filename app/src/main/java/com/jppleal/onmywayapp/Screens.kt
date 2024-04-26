@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -71,6 +72,7 @@ fun CredentialsForm(navController: NavController){
     var email: String by remember{ mutableStateOf("")}
     var password: String by remember { mutableStateOf("")}
     var failed : Boolean by remember { mutableStateOf(false)}
+    val context = LocalContext.current
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -92,7 +94,7 @@ fun CredentialsForm(navController: NavController){
                 .padding(8.dp)
             )
             TextField(value = password,
-                onValueChange = {email = it},
+                onValueChange = {password = it},
                 label = {Text("Password")},
                 keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
                 visualTransformation = PasswordVisualTransformation(),
@@ -104,9 +106,10 @@ fun CredentialsForm(navController: NavController){
             Spacer(Modifier.padding(8.dp))
             Button(onClick = {
                 /*TODO: insert authentication here*/
-                if (loginUser(email, password) != null) {
-                    navController.navigate(Screen.HomeScreen.route)
+                if (loginUser(email = email, password = password, context = context) != null) {
                     failed = false
+                    navController.navigate(Screen.HomeScreen.route)
+
                 }else{
                     failed = true
                 }
@@ -130,7 +133,7 @@ fun HomeScreen(
     alerts: List<Alert>,
     navController: NavController
 ) {
-
+    var context = LocalContext.current
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -140,7 +143,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TopNavigationBar(userName = userName, internalNumber = internalNumber)
+            TopNavigationBar(userName = userName, internalNumber = internalNumber, navController = navController, context = context)
             Spacer(modifier = Modifier.height(16.dp))
             AlertList(alerts = alerts)
         }

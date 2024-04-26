@@ -12,8 +12,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             OnMyWayAppTheme {
+                val isLoggedIn = isLoggedIn(this)
                 // Set up your app's theme and content here
-                MyApp()
+                //MyApp()
+                OnMyWayApp(navController, isLoggedIn)
             }
         }
     }
