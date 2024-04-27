@@ -4,8 +4,8 @@ data class Alert(
     val id: Int,
     val message: String,
     val dateTime: String?,
-    val firefigthers: Int?,
-    val graduateds: Int?,
+    val firefighters: Int?,
+    val graduated: Int?,
     val truckDriver: Int?
 )
 

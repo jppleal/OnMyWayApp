@@ -22,7 +22,7 @@ fun OnMyWayApp(navController: NavHostController, isLoggedIn : Boolean) {
                 LoginScreen(navController)
             }
             composable(Screen.HomeScreen.route) {
-                HomeScreen("","", listOf(), navController)
+                HomeScreen(navController)
             }
             composable(Screen.OptionScreen.route) {
                 OptionScreen(navController)
@@ -33,11 +33,4 @@ fun OnMyWayApp(navController: NavHostController, isLoggedIn : Boolean) {
         }
     }
 }
-
-/*@Composable
-fun MyApp() {
-    val navController = rememberNavController()
-    OnMyWayApp(navController)
-}*/
-
 

@@ -1,4 +1,4 @@
-package com.jppleal.onmywayapp
+package com.jppleal.onmywayapp.data
 
 import com.jppleal.onmywayapp.data.model.Alert
 import com.jppleal.onmywayapp.data.model.CB

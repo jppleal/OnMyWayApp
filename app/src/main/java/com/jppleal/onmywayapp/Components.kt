@@ -1,6 +1,7 @@
 package com.jppleal.onmywayapp
 
 import android.content.Context
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,11 +25,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -57,11 +58,10 @@ import com.jppleal.onmywayapp.data.model.Alert
 fun TopNavigationBar(
     userName: String,
     internalNumber: String,
-    navController : NavController,
+    navController: NavController,
     context: Context
 ) {
     val scrollBehaviour = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-    val showDialog = remember { mutableStateOf(false) }
     Scaffold(
         modifier = Modifier
             .nestedScroll(scrollBehaviour.nestedScrollConnection)
@@ -69,7 +69,7 @@ fun TopNavigationBar(
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    containerColor = Color.LightGray,
                     titleContentColor = MaterialTheme.colorScheme.primary
                 ),
                 title = {
@@ -99,14 +99,25 @@ fun TopNavigationBar(
 }
 
 @Composable
-fun AlertItem(alert: Alert) {
+fun AlertItem(alert: Alert, onItemSelected: (Int) -> Unit) {
     var showDialog by remember {
         mutableStateOf(false)
     }
-    ElevatedCard(
+    var accepted by remember {
+        mutableStateOf(false)
+    }
+    var declined by remember {
+        mutableStateOf(false)
+    }
+    var mytime by remember {
+        mutableStateOf(0)
+    }
+
+    OutlinedCard(
         elevation = CardDefaults.cardElevation(
             defaultElevation = 5.dp
         ),
+        border = BorderStroke(1.dp, color = if (accepted) Color.Green else Color.LightGray),
         modifier = Modifier.padding(10.dp, 5.dp, 10.dp, 5.dp),
 
         ) {
@@ -129,8 +140,8 @@ fun AlertItem(alert: Alert) {
         Text(
             buildString {
                 append("Solicita-se: ")
-                alert.firefigthers?.let { append("$it - Bombeiros; ") }
-                alert.graduateds?.let { append("$it - Graduados; ") }
+                alert.firefighters?.let { append("$it - Bombeiros; ") }
+                alert.graduated?.let { append("$it - Graduados; ") }
                 alert.truckDriver?.let { append("$it - Motoristas de pesados; ") }
             },
             modifier = Modifier.padding(5.dp)
@@ -145,34 +156,72 @@ fun AlertItem(alert: Alert) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
-        ) { //Column or Row?
-            Button(
-                onClick = { showDialog = true },
-                modifier = Modifier
-                    .widthIn()
-                    .padding(5.dp),
-                shape = RoundedCornerShape(5.dp),
-                colors = ButtonDefaults.buttonColors(Color.Green)
-            ) {
+        ) {
+            if (accepted || declined) {
                 Text(
-                    text = "A CAMINHO",
-                    color = Color.Black
+                    text = "Enviado: " + if (accepted) "A CAMINHO -> " + mytime + "(approx.)" else "INDISPONÍVEL",
+                    color = Color.Black,
+                    modifier = Modifier.padding(0.dp,3.dp)
+
                 )
+                Spacer(modifier = Modifier.padding(1.dp))
+                // Use Arrangement.End to align the button to the right
+                Row(modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = {
+                            showDialog = false
+                            accepted = false
+                            declined = false
+                        },
+                        modifier = Modifier.padding(0.dp),
+                        shape = RoundedCornerShape(1.dp),
+                        colors = ButtonDefaults.buttonColors(Color.Transparent),
+                    ) {
+                        Text(
+                            text = "Alterar",
+                            color = Color.Gray
+                        )
+                    }
+                }
+            } else {
+                Button(
+                    onClick = {
+                        showDialog = true
+                        onItemSelected(alert.id)
+                    },
+                    modifier = Modifier
+                        .widthIn()
+                        .padding(5.dp),
+                    shape = RoundedCornerShape(5.dp),
+                    colors = ButtonDefaults.buttonColors(Color.Green),
+                    enabled = if(accepted) false else true
+                ) {
+                    Text(
+                        text = "A CAMINHO",
+                        color = Color.Black
+                    )
+                }
+                Button(
+                    onClick = { declined = true },
+                    modifier = Modifier
+                        .widthIn()
+                        .padding(5.dp),
+                    shape = RoundedCornerShape(5.dp),
+                    colors = ButtonDefaults.buttonColors(Color.Red),
+                    enabled = if(accepted) false else true
+                ) {
+                    Text(
+                        text = "INDISPONÍVEL",
+                        color = Color.Black
+                    )
+                }
             }
             if (showDialog) {
-                EstimatedTimeOfArrival(onDismiss = { showDialog = false })
-            }
-            Button(
-                onClick = { /*TODO*/ },
-                modifier = Modifier
-                    .widthIn()
-                    .padding(5.dp),
-                shape = RoundedCornerShape(5.dp),
-                colors = ButtonDefaults.buttonColors(Color.Red)
-            ) {
-                Text(
-                    text = "INDISPONÍVEL",
-                    color = Color.Black
+                mytime = EstimatedTimeOfArrival(
+                    onDismiss = { showDialog = false },
+                    onAcceptance = { accepted = true },
                 )
             }
         }
@@ -180,7 +229,7 @@ fun AlertItem(alert: Alert) {
 }
 
 @Composable //Lets user to let emissor know how long it will take to arrive
-fun EstimatedTimeOfArrival(onDismiss: () -> Unit) {
+fun EstimatedTimeOfArrival(onDismiss: () -> Unit, onAcceptance: () -> Unit): Int {
     var selectedNumber by remember {
         mutableStateOf(0)
     }
@@ -195,7 +244,7 @@ fun EstimatedTimeOfArrival(onDismiss: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text("Tempo previsto de chegada: XX minutos")/*TODO*/ //indicar o tempo estimado com base na localização ou morada pré definida
+                Text("Tempo previsto de chegada: "+selectedNumber+" minutos")/*TODO*/ //indicar o tempo estimado com base na localização ou morada pré definida
                 Spacer(modifier = Modifier.height(2.dp))
                 Row(modifier = Modifier.padding(0.dp, 1.dp, 0.dp, 1.dp)) {
                     //there's no segmented buttons on compose
@@ -258,12 +307,16 @@ fun EstimatedTimeOfArrival(onDismiss: () -> Unit) {
                         Text("+15")
                     }
                 }
-                Button(onClick = onDismiss) {
+                Button(onClick = {
+                    onDismiss()
+                    onAcceptance()
+                }) {
                     Text("Enviar")
                 }
             }
         }
     }
+    return selectedNumber
 }
 
 @Composable
@@ -317,7 +370,7 @@ fun ScrollContent(innerPadding: PaddingValues) {
     }
 }
 
-@Composable
+/*@Composable
 fun AlertList(alerts: List<Alert>) {
     Column {
         alerts.forEach { alert ->
@@ -325,4 +378,4 @@ fun AlertList(alerts: List<Alert>) {
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
-}
+}*/

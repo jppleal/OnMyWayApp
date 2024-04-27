@@ -20,15 +20,15 @@ fun LoginScreenPreview() {
 @Composable
 fun HomeScreenPreview() {
     val navController = rememberNavController()
-    HomeScreen("José Leal", "935", getSomeGoodHardcodedAlerts(), navController)
+    HomeScreen(navController)
 }
 
-@Preview
+/*@Preview
 @Composable
 fun AlertListPreview() {
     val alerts = getSomeGoodHardcodedAlerts()
     AlertList(alerts = alerts)
-}
+}*/
 
 @Preview
 @Composable
@@ -38,11 +38,11 @@ fun OptionScreenPreview() {
 
 }
 
-@Preview
+/*@Preview
 @Composable
 fun EstimatedTimeOfArrivalPreview() {
-    EstimatedTimeOfArrival(onDismiss = { true })
-}
+    EstimatedTimeOfArrival(onDismiss = { true }, onAcceptance = {selectedAlertId = null})
+}*/
 
 @Preview
 @Composable

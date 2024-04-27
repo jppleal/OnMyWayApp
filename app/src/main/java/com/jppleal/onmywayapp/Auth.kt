@@ -1,6 +1,8 @@
 package com.jppleal.onmywayapp
 
 import android.content.Context
+import com.jppleal.onmywayapp.data.userPasswords
+import com.jppleal.onmywayapp.data.users
 
 fun loginUser(email: String, password: String, context: Context): Int? {
     if(userPasswords != null && userPasswords[email] == password){
