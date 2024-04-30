@@ -18,7 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -81,11 +81,11 @@ fun TopNavigationBar(
                 },
                 actions = {
                     IconButton(onClick = {
-                        navController.navigate(Screen.LogInScreen.route)
-                        logOut(context)
+                        navController.navigate(Screen.OptionScreen.route)
+                       // logOut(context)
                     }) {
                         Icon(
-                            imageVector = Icons.Filled.ExitToApp,
+                            imageVector = Icons.Filled.Settings,
                             contentDescription = "Logout"
                         )
                     }
@@ -370,12 +370,3 @@ fun ScrollContent(innerPadding: PaddingValues) {
     }
 }
 
-/*@Composable
-fun AlertList(alerts: List<Alert>) {
-    Column {
-        alerts.forEach { alert ->
-            AlertItem(alert = alert)
-            Spacer(modifier = Modifier.height(20.dp))
-        }
-    }
-}*/
