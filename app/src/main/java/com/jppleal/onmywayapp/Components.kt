@@ -86,7 +86,7 @@ fun TopNavigationBar(
                     }) {
                         Icon(
                             imageVector = Icons.Filled.Settings,
-                            contentDescription = "Logout"
+                            contentDescription = "Settings"
                         )
                     }
                 },

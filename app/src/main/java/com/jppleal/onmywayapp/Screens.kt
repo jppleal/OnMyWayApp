@@ -45,7 +45,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.jppleal.onmywayapp.data.getSomeGoodHardcodedAlerts
+import com.jppleal.onmywayapp.data.getSomeGoodHardCodedAlertsDelayed
 import com.jppleal.onmywayapp.data.users
 
 @Composable
@@ -211,7 +211,7 @@ fun HomeScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
             //AlertList(alerts = alerts)
-            for (alert in getSomeGoodHardcodedAlerts()) {
+            for (alert in getSomeGoodHardCodedAlertsDelayed()) {
                 AlertItem(alert = alert) {
 
                 }
@@ -281,7 +281,9 @@ fun OptionScreen(navController: NavController) {
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(
-                    onClick = { logOut(context) },
+                    onClick = {
+                        navController.navigate(Screen.OptionScreen.route)
+                        logOut(context) },
                     modifier = Modifier.size(36.dp)
                 ) {
                     Icon(

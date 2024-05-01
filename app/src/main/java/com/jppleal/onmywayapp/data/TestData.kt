@@ -4,15 +4,20 @@ import com.jppleal.onmywayapp.data.model.Alert
 import com.jppleal.onmywayapp.data.model.CB
 import com.jppleal.onmywayapp.data.model.User
 import com.jppleal.onmywayapp.data.model.UserFunction
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 
-
-fun getSomeGoodHardcodedAlerts(): List<Alert> {
+fun getSomeGoodHardCodedAlertsDelayed(): List<Alert> = runBlocking {
+    delay(2000)
+    getSomeGoodHardcodedAlerts()
+}
+fun getSomeGoodHardcodedAlerts(): List<Alert>{
     return listOf(
         Alert(
             1, "Inc. Urbano - Saída de VUCI 01",
             "22-02-2024 00:08",
             4, 1, 1
-        ),
+        )/*,
         Alert(
             id = 2, message = "INC. URBANO - SAÍDA DE VUCI 06",
             dateTime = "22-02-2024 00:08",
@@ -22,7 +27,7 @@ fun getSomeGoodHardcodedAlerts(): List<Alert> {
             id = 3, message = "INC. URBANO - SAÍDA DE VTTU 02",
             dateTime = "22-02-2024 00:08",
             2, null, 1
-        )
+        )*/
     )
 }
 val users = listOf(
