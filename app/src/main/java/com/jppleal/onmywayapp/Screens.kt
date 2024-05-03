@@ -29,6 +29,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,8 +46,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.jppleal.onmywayapp.data.getSomeGoodHardCodedAlertsDelayed
+import com.jppleal.onmywayapp.data.getSomeGoodHardcodedAlerts
+import com.jppleal.onmywayapp.data.model.Alert
+import com.jppleal.onmywayapp.data.playNotificationSound
 import com.jppleal.onmywayapp.data.users
+import kotlinx.coroutines.delay
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -181,10 +185,14 @@ fun HomeScreen(
     fun onAlertItemSelected(alertId: Int?){
         selectedAlertId = alertId
     }
-
-
+    var alerts by remember {
+        mutableStateOf<List<Alert>?>(null)
+    }
     val user = users.find { it.email.equals(userEmail, ignoreCase = true) }
-
+    LaunchedEffect(key1 = Unit) {
+        delay(3000)
+        alerts = getSomeGoodHardcodedAlerts()
+    }
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -211,11 +219,19 @@ fun HomeScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
             //AlertList(alerts = alerts)
-            for (alert in getSomeGoodHardCodedAlertsDelayed()) {
+            alerts?.let { alerts ->
+                for (alert in alerts){
+                    AlertItem(alert = alert){
+                        playNotificationSound(context = context)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+            /*for (alert in getSomeGoodHardCodedAlertsDelayed()) {
                 AlertItem(alert = alert) {
 
                 }
-            }
+            }*/
         }
     }
 }

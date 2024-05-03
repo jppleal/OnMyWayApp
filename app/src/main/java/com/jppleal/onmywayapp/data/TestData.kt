@@ -1,5 +1,8 @@
 package com.jppleal.onmywayapp.data
 
+import android.content.Context
+import android.media.MediaPlayer
+import com.jppleal.onmywayapp.R
 import com.jppleal.onmywayapp.data.model.Alert
 import com.jppleal.onmywayapp.data.model.CB
 import com.jppleal.onmywayapp.data.model.User
@@ -29,6 +32,10 @@ fun getSomeGoodHardcodedAlerts(): List<Alert>{
             2, null, 1
         )*/
     )
+}
+fun playNotificationSound(context: Context){
+    val mediaPlayer = MediaPlayer.create(context, R.raw.alertSound)
+    mediaPlayer.start()
 }
 val users = listOf(
     User(
