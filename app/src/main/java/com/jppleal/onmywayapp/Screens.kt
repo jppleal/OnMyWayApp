@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.jppleal.onmywayapp.data.getSomeGoodHardcodedAlerts
 import com.jppleal.onmywayapp.data.model.Alert
-import com.jppleal.onmywayapp.data.playNotificationSound
 import com.jppleal.onmywayapp.data.users
 import kotlinx.coroutines.delay
 
@@ -222,7 +221,7 @@ fun HomeScreen(
             alerts?.let { alerts ->
                 for (alert in alerts){
                     AlertItem(alert = alert){
-                        playNotificationSound(context = context)
+
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
