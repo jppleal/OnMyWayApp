@@ -5,7 +5,7 @@ import com.jppleal.onmywayapp.data.userPasswords
 import com.jppleal.onmywayapp.data.users
 
 fun loginUser(email: String, password: String, context: Context): Int? {
-    if(userPasswords != null && userPasswords[email] == password){
+    if(userPasswords[email] == password){
         val user = users.find { it.email == email } ?: return null
         saveUserCredentials(email = email, context)
         return user.internalNumber

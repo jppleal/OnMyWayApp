@@ -11,7 +11,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
+            NotificationUtils.createNotificationChannel(this)
             OnMyWayAppTheme {
+                /*TODO: Check for permission for notifications*/
                 val isLoggedIn = isLoggedIn(this)
                 // Set up your app's theme and content here
                 OnMyWayApp(navController, isLoggedIn)

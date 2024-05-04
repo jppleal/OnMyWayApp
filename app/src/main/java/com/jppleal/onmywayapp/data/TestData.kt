@@ -4,13 +4,7 @@ import com.jppleal.onmywayapp.data.model.Alert
 import com.jppleal.onmywayapp.data.model.CB
 import com.jppleal.onmywayapp.data.model.User
 import com.jppleal.onmywayapp.data.model.UserFunction
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 
-fun getSomeGoodHardCodedAlertsDelayed(): List<Alert> = runBlocking {
-    delay(2000)
-    getSomeGoodHardcodedAlerts()
-}
 fun getSomeGoodHardcodedAlerts(): List<Alert>{
     return listOf(
         Alert(
@@ -30,6 +24,7 @@ fun getSomeGoodHardcodedAlerts(): List<Alert>{
         )*/
     )
 }
+
 val users = listOf(
     User(
         935,

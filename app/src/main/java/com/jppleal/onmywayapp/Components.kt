@@ -24,8 +24,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -147,11 +147,11 @@ fun AlertItem(alert: Alert, onItemSelected: (Int) -> Unit) {
             modifier = Modifier.padding(5.dp)
         )
         //divider between text and buttons
-        Divider(
-            color = Color.Gray,
+        HorizontalDivider(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(2.dp)
+                .padding(2.dp),
+            color = Color.Gray
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -258,11 +258,11 @@ fun EstimatedTimeOfArrival(onDismiss: () -> Unit, onAcceptance: () -> Unit): Int
                     ) {
                         Text("5")
                     }
-                    Divider(
-                        color = Color.LightGray,
+                    HorizontalDivider(
                         modifier = Modifier
                             .height(40.dp)
                             .width(1.dp),
+                        color = Color.LightGray
                     )
                     TextButton(
                         onClick = { selectedNumber = 10 },
@@ -274,11 +274,11 @@ fun EstimatedTimeOfArrival(onDismiss: () -> Unit, onAcceptance: () -> Unit): Int
                     ) {
                         Text("10")
                     }
-                    Divider(
-                        color = Color.LightGray,
+                    HorizontalDivider(
                         modifier = Modifier
                             .height(40.dp)
                             .width(1.dp),
+                        color = Color.LightGray
                     )
                     TextButton(
                         onClick = { selectedNumber = 15 },
@@ -290,11 +290,11 @@ fun EstimatedTimeOfArrival(onDismiss: () -> Unit, onAcceptance: () -> Unit): Int
                     ) {
                         Text("15")
                     }
-                    Divider(
-                        color = Color.LightGray,
+                    HorizontalDivider(
                         modifier = Modifier
                             .height(40.dp)
                             .width(1.dp),
+                        color = Color.LightGray
                     )
                     TextButton(
                         onClick = { selectedNumber = 16 },
@@ -319,6 +319,7 @@ fun EstimatedTimeOfArrival(onDismiss: () -> Unit, onAcceptance: () -> Unit): Int
     return selectedNumber
 }
 
+//Not used
 @Composable
 fun LogOutDialog(onDismiss: () -> Unit, onConfirmation: () -> Unit, onCancel: () -> Unit) {
     val context = LocalContext.current

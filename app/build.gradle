@@ -12,7 +12,7 @@ android {
     defaultConfig {
         applicationId "com.jppleal.onmywayapp"
         minSdk 26
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -54,7 +54,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
     implementation("com.google.firebase:firebase-analytics")
     implementation 'com.google.android.gms:play-services-auth:21.1.0'
-    implementation 'androidx.core:core-ktx:1.13.0'
+    implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
     implementation 'androidx.activity:activity-compose:1.9.0'
     implementation platform('androidx.compose:compose-bom:2024.04.01')

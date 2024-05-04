@@ -1,8 +1,13 @@
 package com.jppleal.onmywayapp
 
 
+import android.Manifest
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,11 +21,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +50,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.jppleal.onmywayapp.data.getSomeGoodHardcodedAlerts
 import com.jppleal.onmywayapp.data.model.Alert
@@ -55,8 +61,7 @@ import kotlinx.coroutines.delay
 fun LoginScreen(navController: NavController) {
     val loggedIn = false
     Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier
@@ -78,8 +83,7 @@ fun LoginScreen(navController: NavController) {
                     } else {
                         navController.navigate(Screen.CredentialsForm.route)
                     }
-                },
-                modifier = Modifier.fillMaxWidth()
+                }, modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = "Log In")
             }
@@ -95,8 +99,7 @@ fun CredentialsForm(navController: NavController) {
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier
@@ -105,21 +108,18 @@ fun CredentialsForm(navController: NavController) {
             Arrangement.Center,
             Alignment.CenterHorizontally
         ) {
-            TextField(
-                value = email,
+            TextField(value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
+                    keyboardType = KeyboardType.Email, imeAction = ImeAction.Next
                 ),
                 keyboardActions = KeyboardActions(onNext = { focusRequester.requestFocus() }),
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(
-                modifier = Modifier
-                    .padding(8.dp)
+                modifier = Modifier.padding(8.dp)
             )
             TextField(value = password,
                 onValueChange = { password = it },
@@ -127,12 +127,9 @@ fun CredentialsForm(navController: NavController) {
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardActions = KeyboardActions(onDone =
-                {
+                keyboardActions = KeyboardActions(onDone = {
                     if (loginUser(
-                            email = email,
-                            password = password,
-                            context = context
+                            email = email, password = password, context = context
                         ) != null
                     ) {
                         failed = false
@@ -141,11 +138,11 @@ fun CredentialsForm(navController: NavController) {
                     } else {
                         failed = true
                     }
-                }
-                ),
+                }),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(focusRequester))
+                    .focusRequester(focusRequester)
+            )
             Spacer(Modifier.padding(8.dp))
             if (failed) {
                 Text("Please Try Again.")
@@ -177,13 +174,10 @@ fun CredentialsForm(navController: NavController) {
 fun HomeScreen(
     navController: NavController
 ) {
-    var context = LocalContext.current
-    val userEmail = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-        .getString("userEmail", null)
-    var selectedAlertId by remember { mutableStateOf<Int?>(null)}
-    fun onAlertItemSelected(alertId: Int?){
-        selectedAlertId = alertId
-    }
+    val context = LocalContext.current
+    val userEmail =
+        context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE).getString("userEmail", null)
+    var selectedAlertId by remember { mutableStateOf<Int?>(null) }
     var alerts by remember {
         mutableStateOf<List<Alert>?>(null)
     }
@@ -193,8 +187,7 @@ fun HomeScreen(
         alerts = getSomeGoodHardcodedAlerts()
     }
     Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier.padding(0.dp),
@@ -218,15 +211,39 @@ fun HomeScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
             //AlertList(alerts = alerts)
-            alerts?.let { alerts ->
-                for (alert in alerts){
-                    AlertItem(alert = alert){
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(
+                        context, Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    alerts?.let { alerts ->
+                        for (alert in alerts) {
+                            AlertItem(alert) {}
+                            NotificationUtils.showNotification(
+                                context, "Nova Ocorrência!", alert.message, alert.id
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+                } else {
+
+                    // Optionally, remind the user that the notification permission is needed
+                    // This could redirect them to the settings or show an explanatory dialog
+
                 }
-            }
-            /*for (alert in getSomeGoodHardCodedAlertsDelayed()) {
+            } else {
+                // For versions below Android 13, just show the notification
+                alerts?.let { alerts ->
+                    for (alert in alerts) {
+                        AlertItem(alert) {}
+                        NotificationUtils.showNotification(
+                            context, "Nova Ocorrência!", alert.message, alert.id
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+
+            }/*for (alert in getSomeGoodHardCodedAlertsDelayed()) {
                 AlertItem(alert = alert) {
 
                 }
@@ -240,22 +257,24 @@ fun HomeScreen(
 fun OptionScreen(navController: NavController) {
     val context = LocalContext.current
     Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Settings",
-                style = MaterialTheme.typography.bodyLarge
+                text = "Settings", style = MaterialTheme.typography.bodyLarge
             )
-            Divider(color = Color.LightGray)
+            HorizontalDivider(color = Color.LightGray)
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable {                         // Navigate to the app settings
+                    val intent = Intent().apply {
+                        action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                        putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    }
+                    context.startActivity(intent)
+                }.fillMaxWidth()) {
                 Icon(
                     imageVector = Icons.Default.Notifications,
                     contentDescription = "Option Icon",
@@ -264,10 +283,12 @@ fun OptionScreen(navController: NavController) {
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(text = "Notifications", style = MaterialTheme.typography.bodySmall)
-                    Text(text = "Manage notification settings", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = "Manage notification settings",
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
-
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -279,30 +300,32 @@ fun OptionScreen(navController: NavController) {
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(text = "Dark Mode", style = MaterialTheme.typography.bodySmall)
-                    Text(text = "Enable dark mode", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = "Enable dark mode", style = MaterialTheme.typography.bodySmall
+                    )
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                Switch(
-                    checked = true,
-                    onCheckedChange = {  /*TODO: when changed fun*/ }
-                )
+                Switch(checked = true, onCheckedChange = {  /*TODO: when changed fun*/ })
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
                     Text(text = "Sign Out", style = MaterialTheme.typography.bodySmall)
-                    Text(text = "Sign out of your account", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = "Sign out of your account",
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(
                     onClick = {
-                        navController.navigate(Screen.OptionScreen.route)
-                        logOut(context) },
-                    modifier = Modifier.size(36.dp)
+                        navController.navigate(Screen.LogInScreen.route)
+                        logOut(context)
+                    }, modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ExitToApp,
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                         contentDescription = "Option Icon"
                     )
                 }
