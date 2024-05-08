@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +61,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun LoginScreen(navController: NavController) {
     val loggedIn = false
+    val context  = LocalContext.current
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
@@ -79,6 +81,7 @@ fun LoginScreen(navController: NavController) {
             Button(
                 onClick = {
                     if (loggedIn) {
+                        Toast.makeText(context, "Already Logged in.", Toast.LENGTH_SHORT).show()
                         navController.navigate(Screen.HomeScreen.route)
                     } else {
                         navController.navigate(Screen.CredentialsForm.route)
@@ -98,6 +101,7 @@ fun CredentialsForm(navController: NavController) {
     var failed: Boolean by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
+   // var firebaseRef : DatabaseReference = FirebaseDatabase.getInstance().getReference("test")
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
@@ -132,6 +136,7 @@ fun CredentialsForm(navController: NavController) {
                             email = email, password = password, context = context
                         ) != null
                     ) {
+                       // firebaseRef.setValue("$email $password")
                         failed = false
                         navController.navigate(Screen.HomeScreen.route)
 
