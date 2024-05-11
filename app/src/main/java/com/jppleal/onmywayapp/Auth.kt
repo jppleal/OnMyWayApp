@@ -1,17 +1,33 @@
 package com.jppleal.onmywayapp
 
 import android.content.Context
-import com.jppleal.onmywayapp.data.userPasswords
-import com.jppleal.onmywayapp.data.users
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 
-fun loginUser(email: String, password: String, context: Context): Int? {
+class Auth  {
+    private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+
+    fun loginUser(email: String, password: String, onComplete: (FirebaseUser?, String?) -> Unit){
+        firebaseAuth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener{task ->
+                if(task.isSuccessful){
+                    val user = firebaseAuth.currentUser
+                    onComplete(user, null)
+                }else{
+                    onComplete(null, task.exception?.message)
+                }
+            }
+    }
+}
+
+/*fun loginUser(email: String, password: String, context: Context): Int? {
     if(userPasswords[email] == password){
         val user = users.find { it.email == email } ?: return null
         saveUserCredentials(email = email, context)
         return user.internalNumber
     }
     return null
-}
+}*/
 
 // Function to check if user is logged in
 fun isLoggedIn(context: Context): Boolean {

@@ -101,6 +101,8 @@ fun CredentialsForm(navController: NavController) {
     var failed: Boolean by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
+    val auth = Auth()
+
    // var firebaseRef : DatabaseReference = FirebaseDatabase.getInstance().getReference("test")
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
@@ -132,16 +134,14 @@ fun CredentialsForm(navController: NavController) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardActions = KeyboardActions(onDone = {
-                    if (loginUser(
-                            email = email, password = password, context = context
-                        ) != null
-                    ) {
-                       // firebaseRef.setValue("$email $password")
-                        failed = false
-                        navController.navigate(Screen.HomeScreen.route)
-
-                    } else {
-                        failed = true
+                    auth.loginUser(email, password) {
+                        user, error ->
+                        if (user != null){
+                            navController.navigate(Screen.HomeScreen.route)
+                        }else{
+                            Toast.makeText(context, "Login failed: $error", Toast.LENGTH_SHORT).show()
+                            failed = true
+                        }
                     }
                 }),
                 modifier = Modifier
@@ -154,13 +154,14 @@ fun CredentialsForm(navController: NavController) {
             }
             Spacer(Modifier.padding(8.dp))
             Button(onClick = {
-                /*TODO: insert authentication here*/
-                if (loginUser(email = email, password = password, context = context) != null) {
-                    failed = false
-                    navController.navigate(Screen.HomeScreen.route)
-
-                } else {
-                    failed = true
+                auth.loginUser(email, password) {
+                        user, error ->
+                    if (user != null){
+                        navController.navigate(Screen.HomeScreen.route)
+                    }else{
+                        Toast.makeText(context, "Login failed: $error", Toast.LENGTH_SHORT).show()
+                        failed = true
+                    }
                 }
             }) {
                 Text("Log In")
@@ -182,7 +183,7 @@ fun HomeScreen(
     val context = LocalContext.current
     val userEmail =
         context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE).getString("userEmail", null)
-    var selectedAlertId by remember { mutableStateOf<Int?>(null) }
+    //var selectedAlertId by remember { mutableStateOf<Int?>(null) }
     var alerts by remember {
         mutableStateOf<List<Alert>?>(null)
     }

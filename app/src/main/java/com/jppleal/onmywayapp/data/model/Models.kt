@@ -26,9 +26,6 @@ enum class UserFunction{
     TRUCKDRIVER
 }
 
-data class Career(
-    val careerPosition: String
-)
 data class CB(
     val cbNumber: Int
 )
