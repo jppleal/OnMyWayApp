@@ -18,13 +18,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -61,7 +60,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun LoginScreen(navController: NavController) {
     val loggedIn = false
-    val context  = LocalContext.current
+    val context = LocalContext.current
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
@@ -103,7 +102,7 @@ fun CredentialsForm(navController: NavController) {
     val focusRequester = remember { FocusRequester() }
     val auth = Auth()
 
-   // var firebaseRef : DatabaseReference = FirebaseDatabase.getInstance().getReference("test")
+    // var firebaseRef : DatabaseReference = FirebaseDatabase.getInstance().getReference("test")
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
@@ -134,12 +133,12 @@ fun CredentialsForm(navController: NavController) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardActions = KeyboardActions(onDone = {
-                    auth.loginUser(email, password) {
-                        user, error ->
-                        if (user != null){
+                    auth.loginUser(email, password) { user, error ->
+                        if (user != null) {
                             navController.navigate(Screen.HomeScreen.route)
-                        }else{
-                            Toast.makeText(context, "Login failed: $error", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Login failed: $error", Toast.LENGTH_SHORT)
+                                .show()
                             failed = true
                         }
                     }
@@ -154,11 +153,10 @@ fun CredentialsForm(navController: NavController) {
             }
             Spacer(Modifier.padding(8.dp))
             Button(onClick = {
-                auth.loginUser(email, password) {
-                        user, error ->
-                    if (user != null){
+                auth.loginUser(email, password) { user, error ->
+                    if (user != null) {
                         navController.navigate(Screen.HomeScreen.route)
-                    }else{
+                    } else {
                         Toast.makeText(context, "Login failed: $error", Toast.LENGTH_SHORT).show()
                         failed = true
                     }
@@ -274,19 +272,17 @@ fun OptionScreen(navController: NavController) {
             HorizontalDivider(color = Color.LightGray)
 
             Row(verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable {                         // Navigate to the app settings
-                    val intent = Intent().apply {
-                        action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
-                        putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                modifier = Modifier
+                    .clickable {                         // Navigate to the app settings
+                        val intent = Intent().apply {
+                            action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                            putExtra(
+                                android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName
+                            )
+                        }
+                        context.startActivity(intent)
                     }
-                    context.startActivity(intent)
-                }.fillMaxWidth()) {
-                Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = "Option Icon",
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(16.dp))
+                    .fillMaxWidth()) {
                 Column {
                     Text(text = "Notifications", style = MaterialTheme.typography.bodySmall)
                     Text(
@@ -294,16 +290,16 @@ fun OptionScreen(navController: NavController) {
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
+                Spacer(modifier = Modifier.weight(1f))
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Option Icon",
+                    modifier = Modifier.size(24.dp)
+                )
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Option Icon",
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(text = "Dark Mode", style = MaterialTheme.typography.bodySmall)
                     Text(
@@ -332,7 +328,29 @@ fun OptionScreen(navController: NavController) {
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                        contentDescription = "Option Icon"
+                        contentDescription = "Option Icon",
+                        Modifier.size(24.dp)
+                    )
+                }
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(text = "Add new user", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = "Register new user. (only available for admins)",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(onClick = { /*TODO*/
+
+                }, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add User",
+                        Modifier.size(24.dp)
                     )
                 }
             }
