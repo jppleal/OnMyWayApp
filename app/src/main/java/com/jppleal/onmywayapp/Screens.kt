@@ -102,7 +102,6 @@ fun CredentialsForm(navController: NavController) {
     val focusRequester = remember { FocusRequester() }
     val auth = Auth()
 
-    // var firebaseRef : DatabaseReference = FirebaseDatabase.getInstance().getReference("test")
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
@@ -344,7 +343,7 @@ fun OptionScreen(navController: NavController) {
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = { /*TODO*/
+                IconButton(onClick = { navController.navigate(Screen.NewUserFormScreen.route)
 
                 }, modifier = Modifier.size(36.dp)) {
                     Icon(
@@ -355,5 +354,76 @@ fun OptionScreen(navController: NavController) {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun NewUserFormScreen(navController: NavController){
+    var email: String by remember { mutableStateOf("") }
+    var password: String by remember { mutableStateOf("") }
+    var failed: Boolean by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val focusRequester = remember { FocusRequester() }
+    val auth = Auth()
+    Surface(
+        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxSize(),
+            Arrangement.Center,
+            Alignment.CenterHorizontally
+        ) {
+            TextField(value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email, imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(onNext = { focusRequester.requestFocus() }),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(
+                modifier = Modifier.padding(8.dp)
+            )
+            TextField(value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardActions = KeyboardActions(onDone = {
+                    /*TODO: after inserting the password it should send the information to firebase, and then send the user back to the options screen*/
+
+                }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+            )
+            Spacer(Modifier.padding(8.dp))
+            if (failed) {
+                Text("Please Try Again.")
+            }
+            Spacer(Modifier.padding(8.dp))
+            Button(onClick = {
+                auth.loginUser(email, password) { user, error ->
+                    if (user != null) {
+                        navController.navigate(Screen.HomeScreen.route)
+                    } else {
+                        Toast.makeText(context, "Login failed: $error", Toast.LENGTH_SHORT).show()
+                        failed = true
+                    }
+                }
+            }) {
+                Text("Log In")
+            }
+            Spacer(modifier = Modifier.padding(8.dp))
+            Button(onClick = { navController.navigate(Screen.LogInScreen.route) }) {
+                Text("Back")
+            }
+        }
+
     }
 }

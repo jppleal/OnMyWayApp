@@ -55,3 +55,9 @@ fun CredentialsFormPreview(){
     val  navController = rememberNavController()
     CredentialsForm(navController)
 }
+@Preview
+@Composable
+fun NewUserFormScreenPreview(){
+    val navController = rememberNavController()
+    NewUserFormScreen(navController)
+}

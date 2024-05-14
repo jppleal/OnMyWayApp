@@ -11,6 +11,7 @@ sealed class Screen(val route: String){
     data object HomeScreen : Screen("home")
     data object OptionScreen : Screen("option")
     data object CredentialsForm : Screen("credentialsLogin")
+    data object NewUserFormScreen : Screen("newUserForm")
 }
 
 @Composable
@@ -28,6 +29,9 @@ fun OnMyWayApp(navController: NavHostController, isLoggedIn : Boolean) {
             }
             composable(Screen.CredentialsForm.route){
                 CredentialsForm(navController)
+            }
+            composable(Screen.NewUserFormScreen.route){
+                NewUserFormScreen(navController)
             }
         }
     }
