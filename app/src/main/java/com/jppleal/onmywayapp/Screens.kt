@@ -358,72 +358,90 @@ fun OptionScreen(navController: NavController) {
 }
 
 @Composable
-fun NewUserFormScreen(navController: NavController){
-    var email: String by remember { mutableStateOf("") }
-    var password: String by remember { mutableStateOf("") }
-    var failed: Boolean by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+fun NewUserFormScreen(navController: NavController){    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var internalNumber by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var cbNumber by remember { mutableStateOf("") }
+    var functions by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
-    val auth = Auth()
-    Surface(
-        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
+    val registerUser = RegisterUser()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(
+        TextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Next
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            value = internalNumber,
+            onValueChange = { internalNumber = it },
+            label = { Text("Internal Number") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Next
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            value = cbNumber,
+            onValueChange = { cbNumber = it },
+            label = { Text("CB Number") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            value = functions,
+            onValueChange = { functions = it },
+            label = { Text("Functions (comma separated)") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Done
+            ),
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxSize(),
-            Arrangement.Center,
-            Alignment.CenterHorizontally
+                .fillMaxWidth()
+                .focusRequester(focusRequester)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = {
+                registerUser.registry(email, password, internalNumber, email.split('@')[0], cbNumber, functions.split(",").map { it.trim() })
+            },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
-            TextField(value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email, imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(onNext = { focusRequester.requestFocus() }),
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(
-                modifier = Modifier.padding(8.dp)
-            )
-            TextField(value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardActions = KeyboardActions(onDone = {
-                    /*TODO: after inserting the password it should send the information to firebase, and then send the user back to the options screen*/
-
-                }),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focusRequester)
-            )
-            Spacer(Modifier.padding(8.dp))
-            if (failed) {
-                Text("Please Try Again.")
-            }
-            Spacer(Modifier.padding(8.dp))
-            Button(onClick = {
-                auth.loginUser(email, password) { user, error ->
-                    if (user != null) {
-                        navController.navigate(Screen.HomeScreen.route)
-                    } else {
-                        Toast.makeText(context, "Login failed: $error", Toast.LENGTH_SHORT).show()
-                        failed = true
-                    }
-                }
-            }) {
-                Text("Log In")
-            }
-            Spacer(modifier = Modifier.padding(8.dp))
-            Button(onClick = { navController.navigate(Screen.LogInScreen.route) }) {
-                Text("Back")
-            }
+            Text("Register")
         }
-
     }
 }
