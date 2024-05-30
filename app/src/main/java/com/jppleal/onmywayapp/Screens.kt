@@ -18,13 +18,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -343,7 +351,8 @@ fun OptionScreen(navController: NavController) {
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = { navController.navigate(Screen.NewUserFormScreen.route)
+                IconButton(onClick = {
+                    navController.navigate(Screen.NewUserFormScreen.route)
 
                 }, modifier = Modifier.size(36.dp)) {
                     Icon(
@@ -357,89 +366,123 @@ fun OptionScreen(navController: NavController) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewUserFormScreen(navController: NavController){    var email by remember { mutableStateOf("") }
+fun NewUserFormScreen(navController: NavController) {
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var internalNumber by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
     var cbNumber by remember { mutableStateOf("") }
     var functions by remember { mutableStateOf("") }
-    val focusRequester = remember { FocusRequester() }
     val registerUser = RegisterUser()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center
+            .padding(16.dp), verticalArrangement = Arrangement.Center
     ) {
-        TextField(
-            value = email,
+        TextField(value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
+                keyboardType = KeyboardType.Email, imeAction = ImeAction.Next
             ),
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            value = password,
+        TextField(value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Next
+                keyboardType = KeyboardType.Password, imeAction = ImeAction.Next
             ),
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            value = internalNumber,
+        TextField(value = internalNumber,
             onValueChange = { internalNumber = it },
             label = { Text("Internal Number") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Next
+                keyboardType = KeyboardType.Number, imeAction = ImeAction.Next
             ),
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            value = cbNumber,
+        TextField(value = cbNumber,
             onValueChange = { cbNumber = it },
             label = { Text("CB Number") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Next
+                keyboardType = KeyboardType.Text, imeAction = ImeAction.Next
             ),
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            value = functions,
-            onValueChange = { functions = it },
-            label = { Text("Functions (comma separated)") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Done
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(focusRequester)
-        )
+        val options = listOf("GRADUATED", "TAS", "OPTEL", "LIGHTDRIVER", "TRUCKDRIVER")
+        var expanded by remember { mutableStateOf(false) }
+        var selectedOptions by remember { mutableStateOf(setOf<String>()) }
+
+        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+            TextField(
+                value = selectedOptions.joinToString(", "),
+                onValueChange = {},
+                readOnly = true,
+                singleLine = true,
+                label = { Text("Funções...") },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
+                trailingIcon = {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = "DropDownIcon"
+                    )
+                },
+                colors = ExposedDropdownMenuDefaults.textFieldColors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
+            )
+
+            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                options.forEach { selectionOption ->
+                    DropdownMenuItem(text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = selectionOption in selectedOptions,
+                                onCheckedChange = {
+                                    if (it) {
+                                        selectedOptions = selectedOptions + selectionOption
+                                    } else {
+                                        selectedOptions = selectedOptions - selectionOption
+                                    }
+                                })
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(selectionOption)
+                        }
+                    },
+                        onClick = {},
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
+                }
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                registerUser.registry(email, password, internalNumber, email.split('@')[0], cbNumber, functions.split(",").map { it.trim() })
-            },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+                registerUser.registry(email,
+                    password,
+                    internalNumber,
+                    email.split('@')[0],
+                    cbNumber,
+                    selectedOptions.toList()) { success ->
+                    if (success){
+                        navController.navigate(Screen.OptionScreen.route)
+                    }
+                }
+            }, modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text("Register")
         }
