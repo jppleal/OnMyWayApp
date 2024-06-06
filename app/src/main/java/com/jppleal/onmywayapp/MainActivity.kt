@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.jppleal.onmywayapp.ui.theme.OnMyWayAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity() {
                     RequestNotificationPermission()
                 }
             }
+            FirestoreListener(FirebaseFirestore.getInstance()).runAll()
         }
     }
 

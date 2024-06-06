@@ -42,7 +42,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,10 +59,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
-import com.jppleal.onmywayapp.data.getSomeGoodHardcodedAlerts
 import com.jppleal.onmywayapp.data.model.Alert
 import com.jppleal.onmywayapp.data.users
-import kotlinx.coroutines.delay
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -192,11 +189,14 @@ fun HomeScreen(
     var alerts by remember {
         mutableStateOf<List<Alert>?>(null)
     }
+    /*TODO: make it get info from firebase database based on log in information*/
     val user = users.find { it.email.equals(userEmail, ignoreCase = true) }
-    LaunchedEffect(key1 = Unit) {
+
+
+    /*LaunchedEffect(key1 = Unit) {
         delay(3000)
         alerts = getSomeGoodHardcodedAlerts()
-    }
+    }*/
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
@@ -362,6 +362,32 @@ fun OptionScreen(navController: NavController) {
                     )
                 }
             }
+            Row(verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clickable {                         // Navigate to the app settings
+                        val intent = Intent().apply {
+                            action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                            putExtra(
+                                android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName
+                            )
+                        }
+                        context.startActivity(intent)
+                    }
+                    .fillMaxWidth()) {
+                Column {
+                    Text(text = "Send Alert", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = "Send an alert to test",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Test Alert Button",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }
@@ -472,13 +498,15 @@ fun NewUserFormScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                registerUser.registry(email,
+                registerUser.registry(
+                    email,
                     password,
                     internalNumber,
                     email.split('@')[0],
                     cbNumber,
-                    selectedOptions.toList()) { success ->
-                    if (success){
+                    selectedOptions.toList()
+                ) { success ->
+                    if (success) {
                         navController.navigate(Screen.OptionScreen.route)
                     }
                 }
