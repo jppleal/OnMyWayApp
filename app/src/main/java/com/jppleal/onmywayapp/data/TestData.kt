@@ -9,7 +9,7 @@ fun getSomeGoodHardcodedAlerts(): List<Alert>{
     return listOf(
         Alert(
             1, "Inc. Urbano - Saída de VUCI 01",
-            "22-02-2024 00:08",
+            1717695241,
             4, 1, 1
         )/*,
         Alert(

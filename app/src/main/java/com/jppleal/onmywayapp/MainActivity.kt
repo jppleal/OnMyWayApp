@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
                     RequestNotificationPermission()
                 }
             }
-            FirestoreListener(FirebaseFirestore.getInstance()).runAll()
+            FirestoreListener(FirebaseFirestore.getInstance()).runAll(this)
         }
     }
 

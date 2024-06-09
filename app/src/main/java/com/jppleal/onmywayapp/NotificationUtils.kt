@@ -23,12 +23,12 @@ object NotificationUtils {
             notificationManager.createNotificationChannel(channel)
         }
     }
-    fun showNotification(context: Context, title: String, message: String, notificationId: Int) {
+    fun showNotification(context: Context, title: String, alertText: String, notificationId: Int) {
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_add_alert) // Ensure you have this drawable in your project
             .setContentTitle(title)
-            .setContentText(message)
+            .setContentText(alertText)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
         val notificationManager: NotificationManager =
