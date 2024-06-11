@@ -1,12 +1,14 @@
 package com.jppleal.onmywayapp.data.model
 
+import com.jppleal.onmywayapp.NotificationIdGenerator
+
 data class Alert(
-    val id: Int,
-    val message: String,
-    val dateTime: Long,
-    val firefighters: Int?,
-    val graduated: Int?,
-    val truckDriver: Int?
+    val id: Int = NotificationIdGenerator.getNextNotificationId(),
+    val message: String = "",
+    val dateTime: Long = 0L,
+    val firefighters: Int? = 0,
+    val graduated: Int? = 0,
+    val truckDriver: Int? = 0
 )
 
 data class User(

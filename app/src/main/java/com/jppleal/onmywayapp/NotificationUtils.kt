@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 
 object NotificationUtils {
 
@@ -36,5 +37,24 @@ object NotificationUtils {
         notificationManager.notify(notificationId, builder.build())
 
 
+    }
+
+    fun isNotificationActive(context: Context, notificationId: Int): Boolean {
+        val notificationManager = NotificationManagerCompat.from(context)
+        val activeNotifications = notificationManager.activeNotifications
+        return activeNotifications.any { it.id == notificationId }
+    }
+
+    fun updateNotification(context: Context, title: String, message: String, notificationId: Int) {
+        // Cancel the existing notification
+        cancelNotification(context, notificationId)
+
+        // Show the updated notification
+        NotificationUtils.showNotification(context, title, message, notificationId)
+    }
+
+    fun cancelNotification(context: Context, notificationId: Int) {
+        val notificationManager = NotificationManagerCompat.from(context)
+        notificationManager.cancel(notificationId)
     }
 }

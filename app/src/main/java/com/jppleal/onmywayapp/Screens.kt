@@ -231,7 +231,7 @@ fun HomeScreen(
                         for (alert in alerts) {
                             AlertItem(alert) {}
                             NotificationUtils.showNotification(
-                                context, "Nova Ocorrência!", alert.message, alert.id
+                                context, "Nova Ocorrência!", alert.message, alert.dateTime.toInt()
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                         }

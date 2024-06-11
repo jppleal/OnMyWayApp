@@ -189,7 +189,7 @@ fun AlertItem(alert: Alert, onItemSelected: (Int) -> Unit) {
                 Button(
                     onClick = {
                         showDialog = true
-                        onItemSelected(alert.id)
+                        onItemSelected(alert.dateTime.toInt())
                     },
                     modifier = Modifier
                         .widthIn()

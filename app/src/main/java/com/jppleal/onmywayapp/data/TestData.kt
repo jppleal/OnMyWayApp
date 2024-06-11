@@ -7,11 +7,11 @@ import com.jppleal.onmywayapp.data.model.UserFunction
 
 fun getSomeGoodHardcodedAlerts(): List<Alert>{
     return listOf(
-        Alert(
-            1, "Inc. Urbano - Saída de VUCI 01",
+        /*Alert(
+            0, "Inc. Urbano - Saída de VUCI 01",
             1717695241,
             4, 1, 1
-        )/*,
+        ),
         Alert(
             id = 2, message = "INC. URBANO - SAÍDA DE VUCI 06",
             dateTime = "22-02-2024 00:08",
