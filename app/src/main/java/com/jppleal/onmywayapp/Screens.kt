@@ -364,14 +364,8 @@ fun OptionScreen(navController: NavController) {
             }
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .clickable {                         // Navigate to the app settings
-                        val intent = Intent().apply {
-                            action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
-                            putExtra(
-                                android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName
-                            )
-                        }
-                        context.startActivity(intent)
+                    .clickable {// Send test alert
+                        addAlertToFirebase()
                     }
                     .fillMaxWidth()) {
                 Column {
