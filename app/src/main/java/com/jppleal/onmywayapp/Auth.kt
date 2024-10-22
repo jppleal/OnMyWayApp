@@ -6,7 +6,6 @@ import com.google.firebase.auth.FirebaseUser
 
 class Auth  {
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
-
     fun loginUser(email: String, password: String, onComplete: (FirebaseUser?, String?) -> Unit){
         firebaseAuth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener{task ->
@@ -19,18 +18,6 @@ class Auth  {
             }
     }
 }
-
-/*fun loginUser(email: String, password: String, context: Context): Int? {
-    if(userPasswords[email] == password){
-        val user = users.find { it.email == email } ?: return null
-        saveUserCredentials(email = email, context)
-        return user.internalNumber
-    }
-    return null
-}*/
-
-// Function to save user credentials
-
 
 fun logOut(context: Context) {
     clearUserCredentials(context = context)
