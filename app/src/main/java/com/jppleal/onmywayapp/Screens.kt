@@ -493,15 +493,17 @@ fun NewUserFormScreen(navController: NavController) {
         Button(
             onClick = {
                 registerUser.registry(
-                    email,
-                    password,
-                    internalNumber,
-                    email.split('@')[0],
-                    cbNumber,
-                    selectedOptions.toList()
+                    remail = email,
+                    rpassword = password
+                    //internalNumber,
+                    //email.split('@')[0],
+                    //cbNumber,
+                    //selectedOptions.toList()
                 ) { success ->
                     if (success) {
                         navController.navigate(Screen.OptionScreen.route)
+                    }else{
+
                     }
                 }
             }, modifier = Modifier.align(Alignment.CenterHorizontally)

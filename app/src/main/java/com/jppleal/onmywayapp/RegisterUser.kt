@@ -13,15 +13,18 @@ class RegisterUser {
     ){
         install(Postgrest)
     }
-    suspend fun registry(email: String, password: String){
-        val hashedPassword = hashPassword(password)
-        val user = client.auth.signUpWith(Email){
-            email = email
-            password = hashedPassword
+    suspend fun registry(remail: String, rpassword: String, callback: (Boolean) -> Unit) {
+       try {
+            val hashedPassword = hashPassword(rpassword)
+            val result = client.auth.signUpWith(Email) {
+                email = remail
+                password = hashedPassword
+            }
+        }catch (e: Exception){
+            callback(false)
         }
     }
-
-    fun hashPassword(password: String):String{
+     private fun hashPassword(password: String):String{
         val bytes = MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
         return bytes.joinToString(""){"%02x".format(it)}
     }
