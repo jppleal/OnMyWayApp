@@ -45,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +62,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.jppleal.onmywayapp.data.model.Alert
 import com.jppleal.onmywayapp.data.users
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -490,20 +492,22 @@ fun NewUserFormScreen(navController: NavController) {
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
+        val coroutineScope = rememberCoroutineScope()
         Button(
             onClick = {
-                registerUser.registry(
-                    remail = email,
-                    rpassword = password
-                    //internalNumber,
-                    //email.split('@')[0],
-                    //cbNumber,
-                    //selectedOptions.toList()
-                ) { success ->
-                    if (success) {
-                        navController.navigate(Screen.OptionScreen.route)
-                    }else{
+                coroutineScope.launch {
+                    registerUser.registry(
+                        email, password
+                        //internalNumber,
+                        //email.split('@')[0],
+                        //cbNumber,
+                        //selectedOptions.toList()
+                    ) { success ->
+                        if (success) {
+                            navController.navigate(Screen.OptionScreen.route)
+                        } else {
 
+                        }
                     }
                 }
             }, modifier = Modifier.align(Alignment.CenterHorizontally)
