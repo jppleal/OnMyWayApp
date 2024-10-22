@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -107,7 +108,8 @@ fun CredentialsForm(navController: NavController) {
     var failed: Boolean by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
-    val auth = Auth()
+    val auth = LoginUser()
+    val coroutineScope = rememberCoroutineScope()
 
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
@@ -139,13 +141,14 @@ fun CredentialsForm(navController: NavController) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardActions = KeyboardActions(onDone = {
-                    auth.loginUser(email, password) { user, error ->
-                        if (user != null) {
-                            navController.navigate(Screen.HomeScreen.route)
-                        } else {
-                            Toast.makeText(context, "Login failed: $error", Toast.LENGTH_SHORT)
-                                .show()
-                            failed = true
+                    coroutineScope.launch {
+                        auth.login(email, password) { success ->
+                            if (success) {
+                                navController.navigate(Screen.HomeScreen.route)
+                            } else {
+                                Toast.makeText(context, "Login failed", Toast.LENGTH_SHORT).show()
+                                failed = true
+                            }
                         }
                     }
                 }),
@@ -159,12 +162,14 @@ fun CredentialsForm(navController: NavController) {
             }
             Spacer(Modifier.padding(8.dp))
             Button(onClick = {
-                auth.loginUser(email, password) { user, error ->
-                    if (user != null) {
-                        navController.navigate(Screen.HomeScreen.route)
-                    } else {
-                        Toast.makeText(context, "Login failed: $error", Toast.LENGTH_SHORT).show()
-                        failed = true
+                coroutineScope.launch {
+                    auth.login(email, password) { success ->
+                        if (success) {
+                            navController.navigate(Screen.HomeScreen.route)
+                        } else {
+                            Toast.makeText(context, "Login failed", Toast.LENGTH_SHORT).show()
+                            failed = true
+                        }
                     }
                 }
             }) {
@@ -190,8 +195,7 @@ fun HomeScreen(
     //var selectedAlertId by remember { mutableStateOf<Int?>(null) }
     var alerts by remember {
         mutableStateOf<List<Alert>?>(null)
-    }
-    /*TODO: make it get info from firebase database based on log in information*/
+    }/*TODO: make it get info from firebase database based on log in information*/
     val user = users.find { it.email.equals(userEmail, ignoreCase = true) }
 
 
@@ -373,8 +377,7 @@ fun OptionScreen(navController: NavController) {
                 Column {
                     Text(text = "Send Alert", style = MaterialTheme.typography.bodySmall)
                     Text(
-                        text = "Send an alert to test",
-                        style = MaterialTheme.typography.bodySmall
+                        text = "Send an alert to test", style = MaterialTheme.typography.bodySmall
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
@@ -506,7 +509,7 @@ fun NewUserFormScreen(navController: NavController) {
                         if (success) {
                             navController.navigate(Screen.OptionScreen.route)
                         } else {
-
+                            Log.e("Register", "Didn't register a new user")
                         }
                     }
                 }

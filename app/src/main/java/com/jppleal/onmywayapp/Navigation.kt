@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.jppleal.onmywayapp.ui.theme.OnMyWayAppTheme
+import io.github.jan.supabase.auth.user.UserSession
 
 sealed class Screen(val route: String){
     data object LogInScreen : Screen("login")
@@ -15,9 +16,9 @@ sealed class Screen(val route: String){
 }
 
 @Composable
-fun OnMyWayApp(navController: NavHostController, isLoggedIn : Boolean) {
+fun OnMyWayApp(navController: NavHostController, isLoggedIn: UserSession?) {
     OnMyWayAppTheme {
-        NavHost(navController = navController, startDestination = if(isLoggedIn)Screen.HomeScreen.route else Screen.LogInScreen.route) {
+        NavHost(navController = navController, startDestination = if(isLoggedIn != null)Screen.HomeScreen.route else Screen.LogInScreen.route) {
             composable(Screen.LogInScreen.route) {
                 LoginScreen(navController)
             }

@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -17,12 +16,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.messaging.FirebaseMessaging
 import com.jppleal.onmywayapp.ui.theme.OnMyWayAppTheme
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
@@ -35,10 +32,27 @@ class MainActivity : ComponentActivity() {
     ){
         install(Postgrest)
         install(Realtime)
+        install(Auth)
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            val navController = rememberNavController()
+            val session = client.auth.currentSessionOrNull()
+            Log.e("CheckSession", session.toString())
+            OnMyWayAppTheme {
+                OnMyWayApp(navController = navController, isLoggedIn = session)
+                Log.e("CheckSessionIsNull", session.toString())
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU){
+                    RequestNotificationPermission()
+                }
+            }
+
+        }
+
+        //Old method using firebase
+        /* setContent {
             val navController = rememberNavController()
             firebaseAuth = FirebaseAuth.getInstance()
             NotificationUtils.createNotificationChannel(this)
@@ -61,15 +75,12 @@ class MainActivity : ComponentActivity() {
             }
             //Get new FCM registration token
             val token = task.result
-
             //Log and toast
             val msg = "New token obtained: $token"
             Log.d("FCM", msg)
             Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-        })
-
+        })*/
     }
-
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @Composable
