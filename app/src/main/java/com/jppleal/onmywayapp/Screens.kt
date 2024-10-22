@@ -2,7 +2,6 @@ package com.jppleal.onmywayapp
 
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -43,6 +42,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,7 +62,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.jppleal.onmywayapp.data.model.Alert
-import com.jppleal.onmywayapp.data.users
 import kotlinx.coroutines.launch
 
 @Composable
@@ -190,19 +189,12 @@ fun HomeScreen(
     navController: NavController
 ) {
     val context = LocalContext.current
-    val userEmail =
-        context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE).getString("userEmail", null)
-    //var selectedAlertId by remember { mutableStateOf<Int?>(null) }
     var alerts by remember {
         mutableStateOf<List<Alert>?>(null)
-    }/*TODO: make it get info from firebase database based on log in information*/
-    val user = users.find { it.email.equals(userEmail, ignoreCase = true) }
-
-
-    /*LaunchedEffect(key1 = Unit) {
-        delay(3000)
-        alerts = getSomeGoodHardcodedAlerts()
-    }*/
+    }
+    LaunchedEffect(Unit) {
+        alerts = FecthAlerts()
+    }
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
@@ -211,61 +203,60 @@ fun HomeScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (user != null) {
-                TopNavigationBar(
-                    userName = user.username,
-                    internalNumber = user.internalNumber.toString(),
-                    navController = navController,
-                    context = context
-                )
-            } else {
-                TopNavigationBar(
-                    userName = "",
-                    internalNumber = "",
-                    navController = navController,
-                    context = context
-                )
-            }
+            TopNavigationBar(
+                navController = navController, context = context
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            //AlertList(alerts = alerts)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                if (ContextCompat.checkSelfPermission(
-                        context, Manifest.permission.POST_NOTIFICATIONS
-                    ) == PackageManager.PERMISSION_GRANTED
-                ) {
-                    alerts?.let { alerts ->
-                        for (alert in alerts) {
-                            AlertItem(alert) {}
-                            NotificationUtils.showNotification(
-                                context, "Nova Ocorrência!", alert.message, alert.dateTime.toInt()
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
-                    }
-                } else {
-
-                    // Optionally, remind the user that the notification permission is needed
-                    // This could redirect them to the settings or show an explanatory dialog
-
+            if(alerts == null){
+                Text(text = "A carregar alertas...", modifier = Modifier.padding(16.dp))
+            }else if (alerts!!.isEmpty()){
+                Text(text = "Nenhum alerta de momento.", modifier = Modifier.padding(16.dp))
+            }else{
+                alerts!!.forEach { alert ->
+                    AlertItem(alert = alert) {}
+                    Spacer(modifier = Modifier.padding(16.dp))
                 }
-            } else {
-                // For versions below Android 13, just show the notification
+            }
+        }
+        
+        //AlertList(alerts = alerts)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
                 alerts?.let { alerts ->
                     for (alert in alerts) {
                         AlertItem(alert) {}
                         NotificationUtils.showNotification(
-                            context, "Nova Ocorrência!", alert.message, alert.id
+                            context, "Nova Ocorrência!", alert.message, alert.dateTime.toInt()
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
+            } else {
 
-            }/*for (alert in getSomeGoodHardCodedAlertsDelayed()) {
+                // Optionally, remind the user that the notification permission is needed
+                // This could redirect them to the settings or show an explanatory dialog
+
+            }
+        } else {
+            // For versions below Android 13, just show the notification
+            alerts?.let { alerts ->
+                for (alert in alerts) {
+                    AlertItem(alert) {}
+                    NotificationUtils.showNotification(
+                        context, "Nova Ocorrência!", alert.message, alert.id
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
+        }/*for (alert in getSomeGoodHardCodedAlertsDelayed()) {
                 AlertItem(alert = alert) {
 
                 }
             }*/
-        }
     }
 }
 

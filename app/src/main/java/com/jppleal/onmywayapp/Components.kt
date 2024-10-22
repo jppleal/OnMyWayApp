@@ -56,8 +56,6 @@ import com.jppleal.onmywayapp.data.model.Alert
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopNavigationBar(
-    userName: String,
-    internalNumber: String,
     navController: NavController,
     context: Context
 ) {
@@ -74,7 +72,7 @@ fun TopNavigationBar(
                 ),
                 title = {
                     Text(
-                        text = "$userName - $internalNumber",
+                        text = "On My Way App",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

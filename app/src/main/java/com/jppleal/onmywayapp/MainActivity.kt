@@ -48,38 +48,7 @@ class MainActivity : ComponentActivity() {
                     RequestNotificationPermission()
                 }
             }
-
         }
-
-        //Old method using firebase
-        /* setContent {
-            val navController = rememberNavController()
-            firebaseAuth = FirebaseAuth.getInstance()
-            NotificationUtils.createNotificationChannel(this)
-            FirebaseApp.initializeApp(this);
-            OnMyWayAppTheme {
-                /*TODO: Check for permission for notifications*/
-                //Set up your app's theme and content here
-                OnMyWayApp(navController, firebaseAuth.currentUser != null)
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU){
-                    RequestNotificationPermission()
-                }
-            }
-            FirestoreListener(FirebaseFirestore.getInstance()).runAll(this)
-        }
-        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
-            if (!task.isSuccessful){
-                Log.w("FCM", "Fetching FCM registration token failed", task.exception)
-                return@OnCompleteListener
-            }
-            //Get new FCM registration token
-            val token = task.result
-            //Log and toast
-            val msg = "New token obtained: $token"
-            Log.d("FCM", msg)
-            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-        })*/
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
