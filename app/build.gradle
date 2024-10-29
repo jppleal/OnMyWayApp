@@ -2,7 +2,7 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id("com.google.gms.google-services")
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.9.20'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '2.0.0'
 }
 
 android {
@@ -40,8 +40,9 @@ android {
         viewBinding true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion '1.5.5'
+        kotlinCompilerExtensionVersion '1.5.14'
     }
+
     packagingOptions {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
@@ -50,7 +51,6 @@ android {
 }
 
 dependencies {
-
     implementation 'com.google.android.gms:play-services-auth:21.2.0'
     implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
@@ -86,7 +86,6 @@ dependencies {
     implementation 'io.github.jan-tennert.supabase:auth-kt:3.0.1'
     implementation 'io.github.jan-tennert.supabase:realtime-kt:3.0.1'
     implementation 'io.ktor:ktor-client-android:3.0.0'
-
-
-
+    implementation("io.ktor:ktor-client-websockets:3.0.0")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
 }

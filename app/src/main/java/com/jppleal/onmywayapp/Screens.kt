@@ -5,6 +5,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -44,6 +46,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -62,6 +65,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.jppleal.onmywayapp.data.model.Alert
+import com.jppleal.onmywayapp.FetchAlerts
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
@@ -120,7 +125,8 @@ fun CredentialsForm(navController: NavController) {
             Arrangement.Center,
             Alignment.CenterHorizontally
         ) {
-            TextField(value = email,
+            TextField(
+                value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
                 singleLine = true,
@@ -133,7 +139,8 @@ fun CredentialsForm(navController: NavController) {
             Spacer(
                 modifier = Modifier.padding(8.dp)
             )
-            TextField(value = password,
+            TextField(
+                value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
                 singleLine = true,
@@ -183,18 +190,30 @@ fun CredentialsForm(navController: NavController) {
     }
 }
 
+@Composable
+fun AlertsList(alerts: List<Alert>) {
+    LazyColumn {
+        items(alerts.size) { alert ->
+            Text(text = alerts[alert].message)
+        }
+    }
+}
 
 @Composable
 fun HomeScreen(
     navController: NavController
 ) {
     val context = LocalContext.current
-    var alerts by remember {
-        mutableStateOf<List<Alert>?>(null)
-    }
+    val fetchAlerts = remember { SupabaseService() }
+    val alerts = remember { mutableStateListOf<Alert>() } //to storage the alerts received
+    val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
-        alerts = FecthAlerts()
+        fetchAlerts.startListeningForAlerts { newAlerts ->
+            alerts.clear() //cleans old alerts
+            alerts.addAll(newAlerts) //add new alerts
+        }
     }
+
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
@@ -207,25 +226,20 @@ fun HomeScreen(
                 navController = navController, context = context
             )
             Spacer(modifier = Modifier.height(16.dp))
-            if(alerts == null){
-                Text(text = "A carregar alertas...", modifier = Modifier.padding(16.dp))
-            }else if (alerts!!.isEmpty()){
+            if (alerts.isEmpty()) {
                 Text(text = "Nenhum alerta de momento.", modifier = Modifier.padding(16.dp))
-            }else{
-                alerts!!.forEach { alert ->
-                    AlertItem(alert = alert) {}
-                    Spacer(modifier = Modifier.padding(16.dp))
-                }
+            } else {
+                AlertsList(alerts = alerts)
             }
         }
-        
+
         //AlertList(alerts = alerts)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     context, Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
-                alerts?.let { alerts ->
+                alerts.let { alerts ->
                     for (alert in alerts) {
                         AlertItem(alert) {}
                         NotificationUtils.showNotification(
@@ -242,7 +256,7 @@ fun HomeScreen(
             }
         } else {
             // For versions below Android 13, just show the notification
-            alerts?.let { alerts ->
+            alerts.let { alerts ->
                 for (alert in alerts) {
                     AlertItem(alert) {}
                     NotificationUtils.showNotification(
@@ -260,10 +274,10 @@ fun HomeScreen(
     }
 }
 
-
 @Composable
 fun OptionScreen(navController: NavController) {
     val context = LocalContext.current
+    val scope: CoroutineScope = rememberCoroutineScope()
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
@@ -279,9 +293,9 @@ fun OptionScreen(navController: NavController) {
                 modifier = Modifier
                     .clickable {                         // Navigate to the app settings
                         val intent = Intent().apply {
-                            action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                            action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
                             putExtra(
-                                android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName
+                                Settings.EXTRA_APP_PACKAGE, context.packageName
                             )
                         }
                         context.startActivity(intent)
@@ -362,7 +376,20 @@ fun OptionScreen(navController: NavController) {
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clickable {// Send test alert
-                        addAlertToFirebase()
+                        //addAlertToFirebase()
+                        scope.launch {
+                            val success = FetchAlerts().insertAlert()
+                            if (success) {
+                                Toast.makeText(
+                                    context,
+                                    "Alert sent successfully",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                            } else {
+                                Toast.makeText(context, "Alert not sent", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                     .fillMaxWidth()) {
                 Column {
@@ -397,7 +424,8 @@ fun NewUserFormScreen(navController: NavController) {
             .fillMaxSize()
             .padding(16.dp), verticalArrangement = Arrangement.Center
     ) {
-        TextField(value = email,
+        TextField(
+            value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
             singleLine = true,
@@ -407,7 +435,8 @@ fun NewUserFormScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(value = password,
+        TextField(
+            value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             singleLine = true,
@@ -417,7 +446,8 @@ fun NewUserFormScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(value = internalNumber,
+        TextField(
+            value = internalNumber,
             onValueChange = { internalNumber = it },
             label = { Text("Internal Number") },
             singleLine = true,
@@ -427,7 +457,8 @@ fun NewUserFormScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(value = cbNumber,
+        TextField(
+            value = cbNumber,
             onValueChange = { cbNumber = it },
             label = { Text("CB Number") },
             singleLine = true,
@@ -465,20 +496,21 @@ fun NewUserFormScreen(navController: NavController) {
 
             ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 options.forEach { selectionOption ->
-                    DropdownMenuItem(text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = selectionOption in selectedOptions,
-                                onCheckedChange = {
-                                    if (it) {
-                                        selectedOptions = selectedOptions + selectionOption
-                                    } else {
-                                        selectedOptions = selectedOptions - selectionOption
-                                    }
-                                })
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(selectionOption)
-                        }
-                    },
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(checked = selectionOption in selectedOptions,
+                                    onCheckedChange = {
+                                        if (it) {
+                                            selectedOptions = selectedOptions + selectionOption
+                                        } else {
+                                            selectedOptions = selectedOptions - selectionOption
+                                        }
+                                    })
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(selectionOption)
+                            }
+                        },
                         onClick = {},
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                     )
