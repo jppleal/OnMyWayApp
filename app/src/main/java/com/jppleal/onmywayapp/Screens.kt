@@ -71,8 +71,9 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(navController: NavController) {
-    val loggedIn = false
     val context = LocalContext.current
+    val auth = AuthFireB(context)
+
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
@@ -91,7 +92,8 @@ fun LoginScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(32.dp))
             Button(
                 onClick = {
-                    if (loggedIn) {
+                    //TODO: Verificar se o usuário está logged in
+                    if () {
                         Toast.makeText(context, "Already Logged in.", Toast.LENGTH_SHORT).show()
                         navController.navigate(Screen.HomeScreen.route)
                     } else {
@@ -204,14 +206,13 @@ fun HomeScreen(
     navController: NavController
 ) {
     val context = LocalContext.current
-    val fetchAlerts = remember { SupabaseService() }
     val alerts = remember { mutableStateListOf<Alert>() } //to storage the alerts received
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
-        fetchAlerts.startListeningForAlerts { newAlerts ->
-            alerts.clear() //cleans old alerts
-            alerts.addAll(newAlerts) //add new alerts
-        }
+        //TODO: Preparar para mostrar os alertas
+        //Faz uma limpeza dos alertas antigos
+        //Se depois da escuta houver novos alertas, carregar os novos
+
     }
 
     Surface(
@@ -378,7 +379,7 @@ fun OptionScreen(navController: NavController) {
                     .clickable {// Send test alert
                         //addAlertToFirebase()
                         scope.launch {
-                            val success = FetchAlerts().insertAlert()
+                            val success = true //TODO: teste de alarmes
                             if (success) {
                                 Toast.makeText(
                                     context,
