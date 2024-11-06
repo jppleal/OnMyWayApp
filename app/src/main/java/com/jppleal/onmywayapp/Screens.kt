@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
-import android.widget.ImageButton
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -21,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,21 +27,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -68,8 +58,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
-import com.jppleal.onmywayapp.data.model.Alert
-import com.jppleal.onmywayapp.FetchAlerts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -211,9 +199,7 @@ fun HomeScreen(
 
     LaunchedEffect(Unit) {
         //TODO: Preparar para mostrar os alertas
-        scope.launch {
-            updateAlerts(alerts)
-        }
+        fetchNewAlertsFromBackend(alerts)
     }
 
     Surface(
@@ -239,27 +225,28 @@ fun HomeScreen(
             handleNotifications(alerts, context)
         } else {
             alerts.forEach { alert ->
-                showAlertNotification(context)
+                showAlertNotification(context, alert)
             }
         }
     }
 }
 
-suspend fun updateAlerts(alerts: SnapshotStateList<Alert>) {
-    val newAlerts = fetchNewAlertsFromBackend()
-    alerts.clear()
-    alerts.addAll(newAlerts)
-}
+//suspend fun updateAlerts(alerts: SnapshotStateList<Alert>) {
+//    val newAlerts = fetchNewAlertsFromBackend()
+//    alerts.clear()
+//    alerts.addAll(newAlerts)
+//}
 
 @Composable
-fun handleNotifications(alerts: List<Alert>, context: Context){
+fun handleNotifications(alerts: List<Alert>, context: Context) {
     if (ContextCompat.checkSelfPermission(
-        context, Manifest.permission.POST_NOTIFICATIONS)== PackageManager.PERMISSION_GRANTED
-    ){
+            context, Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+    ) {
         alerts.forEach { alert ->
             showAlertNotification(context, alert)
         }
-    }else {
+    } else {
         //TODO: Handle the permission request
     }
 }
@@ -322,7 +309,10 @@ fun OptionScreen(navController: NavController) {
         Column(
             modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(
                     text = "Settings", style = MaterialTheme.typography.bodyLarge
                 )
@@ -416,17 +406,15 @@ fun OptionScreen(navController: NavController) {
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clickable {// Send test alert
-                        //addAlertToFirebase()
-                        scope.launch {
-                            val success = true //TODO: teste de alarmes
-                            if (success) {
-                                Toast.makeText(
-                                    context, "Alert sent successfully", Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                Toast.makeText(context, "Alert not sent", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+                        addAlertToFirebase(
+                            onSuccess = {
+                            Toast.makeText(context, "Alert sent Successfully", Toast.LENGTH_SHORT)
+                                .show()
+                        }, onFailure = { exception ->
+                            Toast.makeText(context, "Alert sent failed.", Toast.LENGTH_SHORT)
+                                .show()
+                            Log.e("AlertSent", "Alert sent error: ${exception.message}")
+                        })
                     }
                     .fillMaxWidth()) {
                 Column {
@@ -484,7 +472,8 @@ fun NewUserFormScreen(navController: NavController) {
             onClick = {
                 auth.registerUser(email, password,
                     onSuccess = {
-                        Toast.makeText(context, "Registration Successful", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Registration Successful", Toast.LENGTH_SHORT)
+                            .show()
                     }, onFailure = { exception ->
                         Toast.makeText(context, "Registration Failed", Toast.LENGTH_SHORT).show()
                         Log.e("RegistrationError", "Registration error: ${exception.message}")
