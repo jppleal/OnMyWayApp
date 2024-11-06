@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -16,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.messaging.FirebaseMessaging
 import com.jppleal.onmywayapp.ui.theme.OnMyWayAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -24,6 +26,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             val intent = Intent(this, AlertService::class.java)
             this.startService(intent)
+
+            FirebaseMessaging.getInstance().subscribeToTopic("alert")
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Log.e("FCM", "Subscribed to alert topic")
+                    } else {
+                        Log.e("FCM", "Failed to subscribe to alert topic", task.exception)
+                    }
+                }
+
             val navController = rememberNavController()
             OnMyWayAppTheme {
                 OnMyWayApp(navController = navController, AuthFireB())
