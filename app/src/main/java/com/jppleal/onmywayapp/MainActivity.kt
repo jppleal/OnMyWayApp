@@ -38,12 +38,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
-            val session = client.auth.currentSessionOrNull()
-            Log.e("CheckSession", session.toString())
             OnMyWayAppTheme {
-                OnMyWayApp(navController = navController, isLoggedIn = session)
-                Log.e("CheckSessionIsNull", session.toString())
-
+                OnMyWayApp(navController = navController, AuthFireB())
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU){
                     RequestNotificationPermission()
                 }

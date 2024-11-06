@@ -2,11 +2,13 @@ package com.jppleal.onmywayapp
 
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -24,6 +26,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -51,6 +54,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -72,7 +76,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(navController: NavController) {
     val context = LocalContext.current
-    val auth = AuthFireB(context)
+    val auth = AuthFireB()
 
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
@@ -93,8 +97,8 @@ fun LoginScreen(navController: NavController) {
             Button(
                 onClick = {
                     //TODO: Verificar se o usuário está logged in
-                    if () {
-                        Toast.makeText(context, "Already Logged in.", Toast.LENGTH_SHORT).show()
+                    if (auth.isLogged()) {
+                        Toast.makeText(context, "Welcome back!", Toast.LENGTH_SHORT).show()
                         navController.navigate(Screen.HomeScreen.route)
                     } else {
                         navController.navigate(Screen.CredentialsForm.route)
@@ -114,8 +118,7 @@ fun CredentialsForm(navController: NavController) {
     var failed: Boolean by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
-    val auth = LoginUser()
-    val coroutineScope = rememberCoroutineScope()
+    val auth = AuthFireB()
 
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
@@ -149,16 +152,13 @@ fun CredentialsForm(navController: NavController) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardActions = KeyboardActions(onDone = {
-                    coroutineScope.launch {
-                        auth.login(email, password) { success ->
-                            if (success) {
-                                navController.navigate(Screen.HomeScreen.route)
-                            } else {
-                                Toast.makeText(context, "Login failed", Toast.LENGTH_SHORT).show()
-                                failed = true
-                            }
-                        }
-                    }
+                    auth.loginUser(email, password, onSuccess = {
+                        Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
+                    }, onFailure = { exception ->
+                        Toast.makeText(context, "Login Failed", Toast.LENGTH_SHORT).show()
+                        Log.e("LoginError", "Login error: ${exception.message}")
+                    })
+
                 }),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -170,16 +170,13 @@ fun CredentialsForm(navController: NavController) {
             }
             Spacer(Modifier.padding(8.dp))
             Button(onClick = {
-                coroutineScope.launch {
-                    auth.login(email, password) { success ->
-                        if (success) {
-                            navController.navigate(Screen.HomeScreen.route)
-                        } else {
-                            Toast.makeText(context, "Login failed", Toast.LENGTH_SHORT).show()
-                            failed = true
-                        }
-                    }
-                }
+                auth.loginUser(email, password, onSuccess = {
+                    Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
+                    navController.navigate(Screen.HomeScreen.route)
+                }, onFailure = { exception ->
+                    Toast.makeText(context, "Login Failed", Toast.LENGTH_SHORT).show()
+                    Log.e("LoginError", "Login error: ${exception.message}")
+                })
             }) {
                 Text("Log In")
             }
@@ -201,18 +198,22 @@ fun AlertsList(alerts: List<Alert>) {
     }
 }
 
+//HOME SCREEN NOTES
+//1. There should be a function just to load new alerts and clean old ones. This function should be used in the LaunchedEffect()
+//2. To avoid double notifications and to simplify the code, we should conditionally show the notification.
 @Composable
 fun HomeScreen(
     navController: NavController
 ) {
     val context = LocalContext.current
     val alerts = remember { mutableStateListOf<Alert>() } //to storage the alerts received
-    val coroutineScope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
+
     LaunchedEffect(Unit) {
         //TODO: Preparar para mostrar os alertas
-        //Faz uma limpeza dos alertas antigos
-        //Se depois da escuta houver novos alertas, carregar os novos
-
+        scope.launch {
+            updateAlerts(alerts)
+        }
     }
 
     Surface(
@@ -234,60 +235,110 @@ fun HomeScreen(
             }
         }
 
-        //AlertList(alerts = alerts)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                alerts.let { alerts ->
-                    for (alert in alerts) {
-                        AlertItem(alert) {}
-                        NotificationUtils.showNotification(
-                            context, "Nova Ocorrência!", alert.message, alert.dateTime.toInt()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                }
-            } else {
-
-                // Optionally, remind the user that the notification permission is needed
-                // This could redirect them to the settings or show an explanatory dialog
-
-            }
+            handleNotifications(alerts, context)
         } else {
-            // For versions below Android 13, just show the notification
-            alerts.let { alerts ->
-                for (alert in alerts) {
-                    AlertItem(alert) {}
-                    NotificationUtils.showNotification(
-                        context, "Nova Ocorrência!", alert.message, alert.id
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
+            alerts.forEach { alert ->
+                showAlertNotification(context)
             }
-
-        }/*for (alert in getSomeGoodHardCodedAlertsDelayed()) {
-                AlertItem(alert = alert) {
-
-                }
-            }*/
+        }
     }
 }
+
+suspend fun updateAlerts(alerts: SnapshotStateList<Alert>) {
+    val newAlerts = fetchNewAlertsFromBackend()
+    alerts.clear()
+    alerts.addAll(newAlerts)
+}
+
+@Composable
+fun handleNotifications(alerts: List<Alert>, context: Context){
+    if (ContextCompat.checkSelfPermission(
+        context, Manifest.permission.POST_NOTIFICATIONS)== PackageManager.PERMISSION_GRANTED
+    ){
+        alerts.forEach { alert ->
+            showAlertNotification(context, alert)
+        }
+    }else {
+        //TODO: Handle the permission request
+    }
+}
+
+fun showAlertNotification(context: Context, alert: Alert) {
+    NotificationUtils.showNotification(
+        context, "Nova Ocorrência!", alert.message, alert.dateTime.toInt()
+    )
+}
+//        //AlertList(alerts = alerts)
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//            if (ContextCompat.checkSelfPermission(
+//                    context, Manifest.permission.POST_NOTIFICATIONS
+//                ) == PackageManager.PERMISSION_GRANTED
+//            ) {
+//                handleNotifications(alerts, context)
+////                alerts.let { alerts ->
+////                    for (alert in alerts) {
+////                        AlertItem(alert) {}
+////                        NotificationUtils.showNotification(
+////                            context, "Nova Ocorrência!", alert.message, alert.dateTime.toInt()
+////                        )
+////                        Spacer(modifier = Modifier.height(16.dp))
+////                    }
+////                }
+//            } else {
+//
+//                // Optionally, remind the user that the notification permission is needed
+//                // This could redirect them to the settings or show an explanatory dialog
+//
+//            }
+//        } else {
+//            // For versions below Android 13, just show the notification
+//            alerts.let { alerts ->
+//                for (alert in alerts) {
+//                    AlertItem(alert) {}
+//                    NotificationUtils.showNotification(
+//                        context, "Nova Ocorrência!", alert.message, alert.id
+//                    )
+//                    Spacer(modifier = Modifier.height(16.dp))
+//                }
+//            }
+//
+//        }/*for (alert in getSomeGoodHardCodedAlertsDelayed()) {
+//                AlertItem(alert = alert) {
+//
+//                }
+//            }*/
+//    }
+//}
 
 @Composable
 fun OptionScreen(navController: NavController) {
     val context = LocalContext.current
     val scope: CoroutineScope = rememberCoroutineScope()
+    val auth = AuthFireB()
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Settings", style = MaterialTheme.typography.bodyLarge
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Settings", style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = {
+                        navController.navigate(Screen.HomeScreen.route)
+                    }, modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Option Icon",
+                        Modifier.size(28.dp)
+                    )
+                }
+            }
             HorizontalDivider(color = Color.LightGray)
 
             Row(verticalAlignment = Alignment.CenterVertically,
@@ -320,18 +371,6 @@ fun OptionScreen(navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(text = "Dark Mode", style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        text = "Enable dark mode", style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Switch(checked = true, onCheckedChange = {  /*TODO: when changed fun*/ })
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
                     Text(text = "Sign Out", style = MaterialTheme.typography.bodySmall)
                     Text(
                         text = "Sign out of your account",
@@ -342,7 +381,7 @@ fun OptionScreen(navController: NavController) {
                 IconButton(
                     onClick = {
                         navController.navigate(Screen.LogInScreen.route)
-                        logOut(context)
+                        auth.logoutUser()
                     }, modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
@@ -382,11 +421,8 @@ fun OptionScreen(navController: NavController) {
                             val success = true //TODO: teste de alarmes
                             if (success) {
                                 Toast.makeText(
-                                    context,
-                                    "Alert sent successfully",
-                                    Toast.LENGTH_SHORT
-                                )
-                                    .show()
+                                    context, "Alert sent successfully", Toast.LENGTH_SHORT
+                                ).show()
                             } else {
                                 Toast.makeText(context, "Alert not sent", Toast.LENGTH_SHORT).show()
                             }
@@ -410,15 +446,12 @@ fun OptionScreen(navController: NavController) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewUserFormScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var internalNumber by remember { mutableStateOf("") }
-    var cbNumber by remember { mutableStateOf("") }
-    var functions by remember { mutableStateOf("") }
-    val registerUser = RegisterUser()
+    val context = LocalContext.current
+    val auth = AuthFireB()
 
     Column(
         modifier = Modifier
@@ -446,100 +479,28 @@ fun NewUserFormScreen(navController: NavController) {
             ),
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            value = internalNumber,
-            onValueChange = { internalNumber = it },
-            label = { Text("Internal Number") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number, imeAction = ImeAction.Next
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            value = cbNumber,
-            onValueChange = { cbNumber = it },
-            label = { Text("CB Number") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text, imeAction = ImeAction.Next
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        val options = listOf("GRADUATED", "TAS", "OPTEL", "LIGHTDRIVER", "TRUCKDRIVER")
-        var expanded by remember { mutableStateOf(false) }
-        var selectedOptions by remember { mutableStateOf(setOf<String>()) }
-
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-            TextField(
-                value = selectedOptions.joinToString(", "),
-                onValueChange = {},
-                readOnly = true,
-                singleLine = true,
-                label = { Text("Funções...") },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth(),
-                trailingIcon = {
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = "DropDownIcon"
-                    )
-                },
-                colors = ExposedDropdownMenuDefaults.textFieldColors(
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                )
-            )
-
-            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                options.forEach { selectionOption ->
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(checked = selectionOption in selectedOptions,
-                                    onCheckedChange = {
-                                        if (it) {
-                                            selectedOptions = selectedOptions + selectionOption
-                                        } else {
-                                            selectedOptions = selectedOptions - selectionOption
-                                        }
-                                    })
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(selectionOption)
-                            }
-                        },
-                        onClick = {},
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
-                }
-            }
-        }
         Spacer(modifier = Modifier.height(16.dp))
-        val coroutineScope = rememberCoroutineScope()
         Button(
             onClick = {
-                coroutineScope.launch {
-                    registerUser.registry(
-                        email, password
-                        //internalNumber,
-                        //email.split('@')[0],
-                        //cbNumber,
-                        //selectedOptions.toList()
-                    ) { success ->
-                        if (success) {
-                            navController.navigate(Screen.OptionScreen.route)
-                        } else {
-                            Log.e("Register", "Didn't register a new user")
-                        }
-                    }
-                }
+                auth.registerUser(email, password,
+                    onSuccess = {
+                        Toast.makeText(context, "Registration Successful", Toast.LENGTH_SHORT).show()
+                    }, onFailure = { exception ->
+                        Toast.makeText(context, "Registration Failed", Toast.LENGTH_SHORT).show()
+                        Log.e("RegistrationError", "Registration error: ${exception.message}")
+                    })
             }, modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text("Register")
         }
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = {
+                navController.navigate(Screen.OptionScreen.route)
+            }, modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text("Back")
+        }
     }
 }
+

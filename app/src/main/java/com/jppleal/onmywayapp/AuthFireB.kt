@@ -1,9 +1,8 @@
 package com.jppleal.onmywayapp
 
-import android.content.Context
 import com.google.firebase.auth.FirebaseAuth
 
-class AuthFireB(private val context: Context)  {
+class AuthFireB()  {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
     //Login Function
@@ -28,5 +27,15 @@ class AuthFireB(private val context: Context)  {
                     onFailure(task.exception!!)
                 }
             }
+    }
+
+    //isLogged function
+    fun isLogged(): Boolean {
+        return auth.currentUser != null
+    }
+
+    //logout function
+    fun logoutUser(){
+        auth.signOut()
     }
 }

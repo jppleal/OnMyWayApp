@@ -16,23 +16,25 @@ sealed class Screen(val route: String){
 }
 
 @Composable
-fun OnMyWayApp(navController: NavHostController, isLoggedIn: UserSession?) {
+fun OnMyWayApp(navController: NavHostController, auth: AuthFireB) {
     OnMyWayAppTheme {
-        NavHost(navController = navController, startDestination = if(isLoggedIn != null)Screen.HomeScreen.route else Screen.LogInScreen.route) {
-            composable(Screen.LogInScreen.route) {
-                LoginScreen(navController)
-            }
-            composable(Screen.HomeScreen.route) {
-                HomeScreen(navController)
-            }
-            composable(Screen.OptionScreen.route) {
-                OptionScreen(navController)
-            }
-            composable(Screen.CredentialsForm.route){
-                CredentialsForm(navController)
-            }
-            composable(Screen.NewUserFormScreen.route){
-                NewUserFormScreen(navController)
+        if (auth != null) {
+            NavHost(navController = navController, startDestination = if(auth.isLogged())Screen.HomeScreen.route else Screen.LogInScreen.route) {
+                composable(Screen.LogInScreen.route) {
+                    LoginScreen(navController)
+                }
+                composable(Screen.HomeScreen.route) {
+                    HomeScreen(navController)
+                }
+                composable(Screen.OptionScreen.route) {
+                    OptionScreen(navController)
+                }
+                composable(Screen.CredentialsForm.route){
+                    CredentialsForm(navController)
+                }
+                composable(Screen.NewUserFormScreen.route){
+                    NewUserFormScreen(navController)
+                }
             }
         }
     }
