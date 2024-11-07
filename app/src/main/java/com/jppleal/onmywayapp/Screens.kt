@@ -44,12 +44,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -59,7 +59,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -118,8 +117,7 @@ fun CredentialsForm(navController: NavController) {
             Arrangement.Center,
             Alignment.CenterHorizontally
         ) {
-            TextField(
-                value = email,
+            TextField(value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
                 singleLine = true,
@@ -132,8 +130,7 @@ fun CredentialsForm(navController: NavController) {
             Spacer(
                 modifier = Modifier.padding(8.dp)
             )
-            TextField(
-                value = password,
+            TextField(value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
                 singleLine = true,
@@ -198,7 +195,6 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        //TODO: Preparar para mostrar os alertas
         fetchNewAlertsFromBackend(alerts)
     }
 
@@ -256,50 +252,11 @@ fun showAlertNotification(context: Context, alert: Alert) {
         context, "Nova Ocorrência!", alert.message, alert.dateTime.toInt()
     )
 }
-//        //AlertList(alerts = alerts)
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//            if (ContextCompat.checkSelfPermission(
-//                    context, Manifest.permission.POST_NOTIFICATIONS
-//                ) == PackageManager.PERMISSION_GRANTED
-//            ) {
-//                handleNotifications(alerts, context)
-////                alerts.let { alerts ->
-////                    for (alert in alerts) {
-////                        AlertItem(alert) {}
-////                        NotificationUtils.showNotification(
-////                            context, "Nova Ocorrência!", alert.message, alert.dateTime.toInt()
-////                        )
-////                        Spacer(modifier = Modifier.height(16.dp))
-////                    }
-////                }
-//            } else {
-//
-//                // Optionally, remind the user that the notification permission is needed
-//                // This could redirect them to the settings or show an explanatory dialog
-//
-//            }
-//        } else {
-//            // For versions below Android 13, just show the notification
-//            alerts.let { alerts ->
-//                for (alert in alerts) {
-//                    AlertItem(alert) {}
-//                    NotificationUtils.showNotification(
-//                        context, "Nova Ocorrência!", alert.message, alert.id
-//                    )
-//                    Spacer(modifier = Modifier.height(16.dp))
-//                }
-//            }
-//
-//        }/*for (alert in getSomeGoodHardCodedAlertsDelayed()) {
-//                AlertItem(alert = alert) {
-//
-//                }
-//            }*/
-//    }
-//}
 
 @Composable
-fun OptionScreen(navController: NavController) {
+fun OptionScreen(
+    navController: NavController
+) {
     val context = LocalContext.current
     val scope: CoroutineScope = rememberCoroutineScope()
     val auth = AuthFireB()
@@ -310,8 +267,7 @@ fun OptionScreen(navController: NavController) {
             modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = "Settings", style = MaterialTheme.typography.bodyLarge
@@ -403,16 +359,18 @@ fun OptionScreen(navController: NavController) {
                     )
                 }
             }
+            val clipboardManager = LocalClipboardManager.current
+            val context = LocalContext.current
+
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clickable {// Send test alert
-                        addAlertToFirebase(
-                            onSuccess = {
-                            Toast.makeText(context, "Alert sent Successfully", Toast.LENGTH_SHORT)
-                                .show()
+                        addAlertToFirebase(onSuccess = {
+                            Toast.makeText(
+                                context, "Alert sent Successfully", Toast.LENGTH_SHORT
+                            ).show()
                         }, onFailure = { exception ->
-                            Toast.makeText(context, "Alert sent failed.", Toast.LENGTH_SHORT)
-                                .show()
+                            Toast.makeText(context, "Alert sent failed.", Toast.LENGTH_SHORT).show()
                             Log.e("AlertSent", "Alert sent error: ${exception.message}")
                         })
                     }
@@ -446,8 +404,7 @@ fun NewUserFormScreen(navController: NavController) {
             .fillMaxSize()
             .padding(16.dp), verticalArrangement = Arrangement.Center
     ) {
-        TextField(
-            value = email,
+        TextField(value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
             singleLine = true,
@@ -457,8 +414,7 @@ fun NewUserFormScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            value = password,
+        TextField(value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             singleLine = true,
@@ -470,14 +426,16 @@ fun NewUserFormScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                auth.registerUser(email, password,
-                    onSuccess = {
-                        Toast.makeText(context, "Registration Successful", Toast.LENGTH_SHORT)
-                            .show()
-                    }, onFailure = { exception ->
-                        Toast.makeText(context, "Registration Failed", Toast.LENGTH_SHORT).show()
-                        Log.e("RegistrationError", "Registration error: ${exception.message}")
-                    })
+                auth.registerUser(email, password, onSuccess = {
+                    Toast.makeText(
+                        context, "Registration Successful", Toast.LENGTH_SHORT
+                    ).show()
+                }, onFailure = { exception ->
+                    Toast.makeText(context, "Registration Failed", Toast.LENGTH_SHORT).show()
+                    Log.e(
+                        "RegistrationError", "Registration error: ${exception.message}"
+                    )
+                })
             }, modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text("Register")
