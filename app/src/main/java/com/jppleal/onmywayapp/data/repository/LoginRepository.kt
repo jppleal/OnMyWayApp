@@ -1,5 +1,7 @@
-package com.jppleal.onmywayapp.data
+package com.jppleal.onmywayapp.data.repository
 
+import com.jppleal.onmywayapp.data.LoginDataSource
+import com.jppleal.onmywayapp.data.Result
 import com.jppleal.onmywayapp.data.model.LoggedInUser
 
 /**

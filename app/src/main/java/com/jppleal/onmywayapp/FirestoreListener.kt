@@ -32,11 +32,11 @@ class FirestoreListener (
 
             if (snapshot != null){
                 for (document in snapshot.documents){
-                    val alert = document.toObject(Alert::class.java)
-                    if (alert != null){
-                        val notificationId = alert.dateTime.toInt()
-                        val title = alert.message
-                        val message = messageInterpreter(alert) /*TODO: fun messageInterpreter() */
+                    val alertData = document.toObject(Alert::class.java)
+                    if (alertData != null){
+                        val notificationId = alertData.dateTime.toInt()
+                        val title = alertData.message
+                        val message = messageInterpreter(alertData) /*TODO: fun messageInterpreter() */
 
                         // Check if a notification with the same ID exists
                         if (isNotificationActive(context, notificationId)) {
@@ -58,9 +58,9 @@ class FirestoreListener (
         }
     }
 
-    private fun messageInterpreter(alert: Alert): String {
+    private fun messageInterpreter(alertData: Alert): String {
         // Format the alert message as needed
-        val formattedMessage = "Firefighters: ${alert.firefighters}; Graduated: ${alert.graduated}; Truck Driver: ${alert.truckDriver}"
+        val formattedMessage = "Firefighters: ${alertData.firefighters}; Graduated: ${alertData.graduated}; Truck Driver: ${alertData.truckDriver}"
         return formattedMessage
     }
 

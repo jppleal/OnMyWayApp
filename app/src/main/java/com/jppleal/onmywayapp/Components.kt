@@ -1,21 +1,18 @@
 package com.jppleal.onmywayapp
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -32,7 +29,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -44,12 +40,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import com.google.firebase.database.FirebaseDatabase
 import com.jppleal.onmywayapp.data.model.Alert
 
 
@@ -97,262 +93,130 @@ fun TopNavigationBar(
 }
 
 @Composable
-fun AlertItem(alert: Alert, onItemSelected: (Int) -> Unit) {
-    var showDialog by remember {
-        mutableStateOf(false)
+fun AlertItem(alertData: Alert, onItemSelected: (Int) -> Unit) {
+    var showDialog by remember { mutableStateOf(false) }
+    var accepted by remember { mutableStateOf(false) }
+    var declined by remember { mutableStateOf(false) }
+    var estimatedTime by remember { mutableStateOf(0) }
+    val formattedDate = remember(alertData.dateTime) {
+        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault())
+        sdf.format(java.util.Date(alertData.dateTime))
     }
-    var accepted by remember {
-        mutableStateOf(false)
-    }
-    var declined by remember {
-        mutableStateOf(false)
-    }
-    var mytime by remember {
-        mutableStateOf(0)
-    }
-
     OutlinedCard(
         elevation = CardDefaults.cardElevation(
             defaultElevation = 5.dp
         ),
         border = BorderStroke(1.dp, color = if (accepted) Color.Green else Color.LightGray),
-        modifier = Modifier.padding(10.dp, 5.dp, 10.dp, 5.dp),
-
-        ) {
-        //Alert title
+        modifier = Modifier.padding(10.dp, 5.dp, 10.dp, 5.dp)
+    ) {
+        // Título do Alerta
         Text(
-            text = alert.message,
-            modifier = Modifier.padding(5.dp, 5.dp, 5.dp, 5.dp),
+            text = alertData.message,
+            modifier = Modifier.padding(5.dp),
             textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(1.dp))
-        // date and time of the alert
+        // Data e Hora do Alerta
         Text(
-            text = alert.dateTime.toString(),
-            modifier = Modifier.padding(5.dp)
+            text = "Data/Hora: $formattedDate",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(5.dp),
+            color = Color.Gray
         )
 
         Spacer(modifier = Modifier.height(1.dp))
-        // requested info from the alert
+        // Informação Solicitada
         Text(
             buildString {
-                append("Solicita-se: ")
-                alert.firefighters?.let { append("$it - Bombeiros; ") }
-                alert.graduated?.let { append("$it - Graduados; ") }
-                alert.truckDriver?.let { append("$it - Motoristas de pesados; ") }
+                append("Solicita-se: \n")
+                alertData.firefighters?.let { append("$it - Bombeiros; ") }
+                alertData.graduated?.let { append("$it - Graduados; ") }
+                alertData.truckDriver?.let { append("$it - Motoristas de pesados; ") }
             },
             modifier = Modifier.padding(5.dp)
         )
-        //divider between text and buttons
-        HorizontalDivider(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(2.dp),
-            color = Color.Gray
-        )
+
+        // Divider entre Texto e Botões
+        HorizontalDivider(modifier = Modifier.padding(5.dp), color = Color.Gray)
+
+        // Botões de Resposta
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
             if (accepted || declined) {
+                // Mensagem se o alerta foi aceito ou recusado
                 Text(
-                    text = "Enviado: " + if (accepted) "A CAMINHO -> " + mytime + "(approx.)" else "INDISPONÍVEL",
+                    text = "Resposta: ${if (accepted) "A CAMINHO (Tempo: $estimatedTime min)" else "INDISPONÍVEL"}",
                     color = Color.Black,
-                    modifier = Modifier.padding(0.dp,3.dp)
-
+                    modifier = Modifier.padding(5.dp)
                 )
-                Spacer(modifier = Modifier.padding(1.dp))
-                // Use Arrangement.End to align the button to the right
-                Row(modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(
-                        onClick = {
-                            showDialog = false
-                            accepted = false
-                            declined = false
-                        },
-                        modifier = Modifier.padding(0.dp),
-                        shape = RoundedCornerShape(1.dp),
-                        colors = ButtonDefaults.buttonColors(Color.Transparent),
-                    ) {
-                        Text(
-                            text = "Alterar",
-                            color = Color.Gray
-                        )
-                    }
-                }
             } else {
+                // Botão "A Caminho"
                 Button(
                     onClick = {
                         showDialog = true
-                        onItemSelected(alert.dateTime.toInt())
+                        onItemSelected(alertData.id)
                     },
-                    modifier = Modifier
-                        .widthIn()
-                        .padding(5.dp),
-                    shape = RoundedCornerShape(5.dp),
-                    colors = ButtonDefaults.buttonColors(Color.Green),
-                    enabled = if(accepted) false else true
+                    modifier = Modifier.padding(5.dp),
+                    colors = ButtonDefaults.buttonColors(Color.Green)
                 ) {
-                    Text(
-                        text = "A CAMINHO",
-                        color = Color.Black
-                    )
+                    Text(text = "A CAMINHO", color = Color.White)
                 }
+                // Botão "Indisponível"
                 Button(
-                    onClick = { declined = true },
-                    modifier = Modifier
-                        .widthIn()
-                        .padding(5.dp),
-                    shape = RoundedCornerShape(5.dp),
-                    colors = ButtonDefaults.buttonColors(Color.Red),
-                    enabled = if(accepted) false else true
+                    onClick = {
+                        declined = true
+                        updatedAlertResponse(alertData.id, "Indisponível")
+                    },
+                    modifier = Modifier.padding(5.dp),
+                    colors = ButtonDefaults.buttonColors(Color.Red)
                 ) {
-                    Text(
-                        text = "INDISPONÍVEL",
-                        color = Color.Black
-                    )
+                    Text(text = "INDISPONÍVEL", color = Color.White)
                 }
-            }
-            if (showDialog) {
-                mytime = EstimatedTimeOfArrival(
-                    onDismiss = { showDialog = false },
-                    onAcceptance = { accepted = true },
-                )
             }
         }
     }
+
+    if (showDialog) {
+        EstimatedTimeDialog(
+            onDismiss = { showDialog = false },
+            onTimeSelected = { time ->
+                accepted = true
+                estimatedTime = time
+                updatedAlertResponse(alertData.id, "A Caminho", time)
+                showDialog = false
+            }
+        )
+    }
 }
 
-@Composable //Lets user to let emissor know how long it will take to arrive
-fun EstimatedTimeOfArrival(onDismiss: () -> Unit, onAcceptance: () -> Unit): Int {
-    var selectedNumber by remember {
-        mutableStateOf(0)
-    }
+@Composable
+fun EstimatedTimeDialog(onDismiss: () -> Unit, onTimeSelected: (Int) -> Unit) {
+    var selectedTime by remember { mutableStateOf(5) }
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            modifier = Modifier
-                .padding(16.dp)
-                .width(300.dp)
+            modifier = Modifier.padding(16.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Tempo previsto de chegada: "+selectedNumber+" minutos")/*TODO*/ //indicar o tempo estimado com base na localização ou morada pré definida
-                Spacer(modifier = Modifier.height(2.dp))
-                Row(modifier = Modifier.padding(0.dp, 1.dp, 0.dp, 1.dp)) {
-                    //there's no segmented buttons on compose
-                    TextButton(
-                        onClick = { selectedNumber = 5 },
-                        modifier = Modifier
-                            .padding(horizontal = 1.dp, vertical = 1.dp)
-                            .background(
-                                if (selectedNumber == 5) Color.LightGray else Color.Transparent
-                            )
-                    ) {
-                        Text("5")
-                    }
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .height(40.dp)
-                            .width(1.dp),
-                        color = Color.LightGray
-                    )
-                    TextButton(
-                        onClick = { selectedNumber = 10 },
-                        modifier = Modifier
-                            .padding(horizontal = 1.dp, vertical = 1.dp)
-                            .background(
-                                if (selectedNumber == 10) Color.LightGray else Color.Transparent
-                            )
-                    ) {
-                        Text("10")
-                    }
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .height(40.dp)
-                            .width(1.dp),
-                        color = Color.LightGray
-                    )
-                    TextButton(
-                        onClick = { selectedNumber = 15 },
-                        modifier = Modifier
-                            .padding(horizontal = 1.dp, vertical = 1.dp)
-                            .background(
-                                if (selectedNumber == 15) Color.LightGray else Color.Transparent
-                            )
-                    ) {
-                        Text("15")
-                    }
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .height(40.dp)
-                            .width(1.dp),
-                        color = Color.LightGray
-                    )
-                    TextButton(
-                        onClick = { selectedNumber = 16 },
-                        modifier = Modifier
-                            .padding(horizontal = 1.dp, vertical = 1.dp)
-                            .background(
-                                if (selectedNumber == 16) Color.LightGray else Color.Transparent
-                            )
-                    ) {
-                        Text("+15")
-                    }
+                Text("Selecione o Tempo Estimado de Chegada")
+                Spacer(modifier = Modifier.height(16.dp))
+                // Segmento de botões para selecionar o tempo
+                Row {
+                    Button(onClick = { selectedTime = 5 }) { Text("5 min") }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = { selectedTime = 10 }) { Text("10 min") }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = { selectedTime = 15 }) { Text("15 min") }
                 }
-                Button(onClick = {
-                    onDismiss()
-                    onAcceptance()
-                }) {
-                    Text("Enviar")
-                }
-            }
-        }
-    }
-    return selectedNumber
-}
-
-//Not used
-@Composable
-fun LogOutDialog(onDismiss: () -> Unit, onConfirmation: () -> Unit, onCancel: () -> Unit) {
-    val context = LocalContext.current
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp)
-                .padding(16.dp),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text("De certeza que pretende fazer logout?")
-                Spacer(modifier = Modifier.height(2.dp))
-                Row(modifier = Modifier.padding(0.dp, 1.dp, 0.dp, 1.dp)) {
-                    //there's no segmented buttons on compose
-                    TextButton(
-                        onClick =
-                        onConfirmation,
-                        modifier = Modifier
-                            .padding(8.dp)
-                    ) {
-                        Text("Sim")
-                    }
-                    TextButton(
-                        onClick = onCancel,
-                        modifier = Modifier
-                            .padding(8.dp)
-                    ) {
-                        Text("Não")
-                    }
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { onTimeSelected(selectedTime) }) {
+                    Text("Confirmar")
                 }
             }
         }

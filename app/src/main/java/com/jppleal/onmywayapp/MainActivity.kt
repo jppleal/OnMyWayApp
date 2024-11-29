@@ -27,7 +27,6 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.jppleal.onmywayapp.ui.theme.OnMyWayAppTheme
 
 class MainActivity : ComponentActivity() {
-    private val viewModel: ChatViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestNotificationPermission()
@@ -35,7 +34,7 @@ class MainActivity : ComponentActivity() {
             val intent = Intent(this, AlertService::class.java)
             this.startService(intent)
 
-            FirebaseMessaging.getInstance().subscribeToTopic("alert")
+            FirebaseMessaging.getInstance().subscribeToTopic("alerts")
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         Log.e("FCM", "Subscribed to alert topic")
@@ -46,31 +45,7 @@ class MainActivity : ComponentActivity() {
 
             val navController = rememberNavController()
             OnMyWayAppTheme {
-                Surface(
-                    color = MaterialTheme.colorScheme.background,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    val state = viewModel.state
-                    if (state.isEnteringToken) {
-                        EnterTokenDialog(
-                            token = state.remoteToken,
-                            onTokenChange = viewModel::onRemoteTokenChange,
-                            onSubmit = viewModel::onSubmitRemoteToken
-                        )
-                    } else {
-                        ChatScreen(
-                            messageText = state.messageText,
-                            onMessageSend = { viewModel.sendMessage(isBroadcast = false) },
-                            onMessageBroadcast = { viewModel.sendMessage(isBroadcast = true) },
-                            onMessageChange = viewModel::onMessageChange
-                        )
-
-                    }
-                }
-//                OnMyWayApp(navController = navController, AuthFireB())
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU){
-//                    RequestNotificationPermission()
-//                }
+               OnMyWayApp(navController = navController, AuthFireB())
             }
         }
     }
@@ -86,28 +61,6 @@ class MainActivity : ComponentActivity() {
                     this,
                     arrayOf(Manifest.permission.POST_NOTIFICATIONS),0)
             }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    @Composable
-    fun RequestNotificationPermission() {
-        val permissionState = remember { mutableStateOf(false) }
-
-        val launcher =
-            rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-                permissionState.value = isGranted
-            }
-        LaunchedEffect(Unit) {
-            if (ContextCompat.checkSelfPermission(
-                    this@MainActivity,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            )
-                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        if (!permissionState.value) {
-            /*TODO: Show some UI explanation on why notifications permission is needed*/
         }
     }
 }

@@ -2,64 +2,77 @@ package com.jppleal.onmywayapp
 
 import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.jppleal.onmywayapp.data.model.Alert
 
-data class Alert(
-    val id: String = "",
-    val message: String = "",
-    val dateTime: Long = 0
-)
 
 fun fetchNewAlertsFromBackend(alerts: SnapshotStateList<Alert>) {
-    val database = FirebaseDatabase.getInstance("https://on-my-way-app-3ixreu-default-rtdb.europe-west1.firebasedatabase.app/")
+    val database =
+        FirebaseDatabase.getInstance("https://on-my-way-app-3ixreu-default-rtdb.europe-west1.firebasedatabase.app/")
     val alertsRef = database.getReference("alerts")
 
     // Listener para escutar atualizações em tempo real
-    alertsRef.addValueEventListener(object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            val newAlerts = mutableListOf<Alert>()
-            for (alertSnapshot in snapshot.children) {
-                val alert = alertSnapshot.getValue(Alert::class.java)
-                if (alert != null) {
-                    newAlerts.add(alert)
+        alertsRef.addChildEventListener(
+        object : ChildEventListener {
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                val newAlert = snapshot.getValue(Alert::class.java)
+                newAlert?.let {
+                    alerts.add(it)
                 }
             }
-            // Atualiza a lista de alertas de maneira reativa
-            alerts.clear()
-            alerts.addAll(newAlerts)
-        }
 
-        override fun onCancelled(error: DatabaseError) {
-            Log.e("AlertListener", "Erro ao escutar alertas: ${error.message}")
-        }
-    })
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                val updatedAlert = snapshot.getValue(Alert::class.java)
+                updatedAlert?.let { alert ->
+                    val index = alerts.indexOfFirst { it.id == alert.id }
+                    if (index != -1) {
+                        alerts[index] = alert
+                    }
+                }
+            }
+
+            override fun onChildRemoved(snapshot: DataSnapshot) {
+                val removedAlert = snapshot.getValue(Alert::class.java)
+                removedAlert?.let { alert ->
+                    alerts.remove(alert)
+                }
+            }
+
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+                TODO("Not yet implemented")
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("Alert.kt", "Erro ao escutar alertas: ${error.message}")
+            }
+        })
 }
 
-//suspend fun fetchNewAlertsFromBackend(): List<Alert> = suspendCoroutine{ continuation ->
-//    val db =
-//        FirebaseDatabase.getInstance("https://on-my-way-app-3ixreu-default-rtdb.europe-west1.firebasedatabase.app/")
-//    val alertsRef = db.getReference("alerts")
-//
-//    alertsRef.addListenerForSingleValueEvent(object : ValueEventListener {
-//        override fun onDataChange(snapshot: DataSnapshot) {
-//            val alertsList = mutableListOf<Alert>()
-//            for (alertSnapshot in snapshot.children) {
-//                val alert = alertSnapshot.getValue(Alert::class.java)
-//                alert?.let { alertsList.add(it) }
-//            }
-//            continuation.resume(alertsList)
-//        }
-//
-//
-//        override fun onCancelled(error: DatabaseError) {
-//            continuation.resumeWithException(error.toException())
-//            Log.e("fetchNewAlerts", "Error fetching new alerts: ${error.message}")
-//        }
-//    })
-//}
+fun updatedAlertResponse(alertId: Int, status: String, estimatedTime: Int? = null) {
+    val database =
+        FirebaseDatabase.getInstance("https://on-my-way-app-3ixreu-default-rtdb.europe-west1.firebasedatabase.app/")
+    val alertsRef = database.getReference("alerts").child(alertId.toString())
+
+    //creates map of updates
+    val updates = hashMapOf<String, Any>(
+        "status" to status
+    )
+    estimatedTime?.let {
+        updates["estimatedTime"] = it
+    }
+
+    //updates the data of the alert in the Firebase database
+    alertsRef.updateChildren(updates)
+        .addOnSuccessListener {
+            Log.d("AlertResponse", "Resposta atualizada com sucesso.")
+        }
+        .addOnFailureListener {
+            Log.e("AlertResponse", "Erro ao atualizar resposta: ${it.message}")
+        }
+}
 
 fun addAlertToFirebase(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
     //get firebaseDatabase instance
@@ -69,15 +82,19 @@ fun addAlertToFirebase(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
     val alertsRef = database.getReference("alerts")
 
     //create a unique ID for a new alert
-    val alertId = alertsRef.push().key
+    val alertId = alertsRef.push().key ?: return
 
     //Data from the alert to be added
-    val alertData = mapOf(
-        "message" to "This an alert for test!",
-        "timestamp" to System.currentTimeMillis()
+    val alertData = Alert(
+        id = alertId.hashCode(),
+        message = "Inc. Urbano",
+        dateTime = System.currentTimeMillis(),
+        firefighters = 4,
+        graduated = 1,
+        truckDriver = 1
     )
 
-    //verifyin if the alertId is not null
+    //verifying if the alertId is not null
     if (alertId != null) {
         alertsRef.child(alertId).setValue(alertData)
             .addOnCompleteListener { task ->
@@ -92,4 +109,6 @@ fun addAlertToFirebase(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
     } else {
         Log.e("AlertSent", "Error: alertId is null.")
     }
+
+
 }

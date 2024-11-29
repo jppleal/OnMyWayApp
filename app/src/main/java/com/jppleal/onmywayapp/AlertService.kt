@@ -9,6 +9,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.jppleal.onmywayapp.data.model.Alert
 
 class AlertService : Service() {
     private lateinit var databaseRef: DatabaseReference
@@ -26,7 +27,7 @@ class AlertService : Service() {
             }
         }
         override fun onCancelled(error: DatabaseError) {
-            Log.e("AlertService", "Error listening the alerts: ${error.message}")
+            Log.e("AlertService.kt", "Error listening the alerts: ${error.message}")
         }
     }
 

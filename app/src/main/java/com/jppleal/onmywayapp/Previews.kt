@@ -46,11 +46,6 @@ fun EstimatedTimeOfArrivalPreview() {
 
 @Preview
 @Composable
-fun LogOutDialogPreview() {
-    LogOutDialog(onDismiss = { false }, onConfirmation = { true }, onCancel = { true })
-}
-@Preview
-@Composable
 fun CredentialsFormPreview(){
     val  navController = rememberNavController()
     CredentialsForm(navController)

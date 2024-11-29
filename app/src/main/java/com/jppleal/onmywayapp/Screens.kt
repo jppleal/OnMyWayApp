@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -49,7 +50,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -58,7 +58,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.jppleal.onmywayapp.data.model.Alert
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -117,7 +121,8 @@ fun CredentialsForm(navController: NavController) {
             Arrangement.Center,
             Alignment.CenterHorizontally
         ) {
-            TextField(value = email,
+            TextField(
+                value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
                 singleLine = true,
@@ -130,7 +135,8 @@ fun CredentialsForm(navController: NavController) {
             Spacer(
                 modifier = Modifier.padding(8.dp)
             )
-            TextField(value = password,
+            TextField(
+                value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
                 singleLine = true,
@@ -174,14 +180,14 @@ fun CredentialsForm(navController: NavController) {
     }
 }
 
-@Composable
-fun AlertsList(alerts: List<Alert>) {
-    LazyColumn {
-        items(alerts.size) { alert ->
-            Text(text = alerts[alert].message)
-        }
-    }
-}
+//@Composable
+//fun AlertsList(alerts: List<Alert>) {
+//    LazyColumn {
+//        items(alerts.size) { alert ->
+//            Text(text = alerts[alert].message)
+//        }
+//    }
+//}
 
 //HOME SCREEN NOTES
 //1. There should be a function just to load new alerts and clean old ones. This function should be used in the LaunchedEffect()
@@ -213,7 +219,13 @@ fun HomeScreen(
             if (alerts.isEmpty()) {
                 Text(text = "Nenhum alerta de momento.", modifier = Modifier.padding(16.dp))
             } else {
-                AlertsList(alerts = alerts)
+                LazyColumn {
+                    items(alerts) { alert: Alert ->
+                        AlertItem(alertData = alert) { alertId ->
+                            //Tratamento ao selecionar um alerta
+                        }
+                    }
+                }
             }
         }
 
@@ -247,7 +259,7 @@ fun handleNotifications(alerts: List<Alert>, context: Context) {
     }
 }
 
-fun showAlertNotification(context: Context, alert: Alert) {
+fun showAlertNotification(context: Context, alert: Alert){
     NotificationUtils.showNotification(
         context, "Nova Ocorrência!", alert.message, alert.dateTime.toInt()
     )
@@ -260,6 +272,7 @@ fun OptionScreen(
     val context = LocalContext.current
     val scope: CoroutineScope = rememberCoroutineScope()
     val auth = AuthFireB()
+    val notificationService = NetworkModule.notificationService
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
     ) {
@@ -359,16 +372,35 @@ fun OptionScreen(
                     )
                 }
             }
-            val clipboardManager = LocalClipboardManager.current
-            val context = LocalContext.current
-
-            Row(verticalAlignment = Alignment.CenterVertically,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clickable {// Send test alert
                         addAlertToFirebase(onSuccess = {
                             Toast.makeText(
                                 context, "Alert sent Successfully", Toast.LENGTH_SHORT
                             ).show()
+                            CoroutineScope(Dispatchers.IO).launch {
+                                try {
+                                    notificationService.sendAlert(
+                                        title = "Test Alert", "This is a test sent from the App!"
+                                    )
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(
+                                            context, "Alert sent Successfully", Toast.LENGTH_SHORT
+                                        ).show()
+                                        Log.e("AlertSent", "Alert sent Successfully")
+
+                                    }
+                                } catch (e: Exception) {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(
+                                            context, "Alert sent failed.", Toast.LENGTH_SHORT
+                                        ).show()
+                                        Log.e("AlertSent", "Alert sent error: ${e.message}")
+                                    }
+                                }
+                            }
                         }, onFailure = { exception ->
                             Toast.makeText(context, "Alert sent failed.", Toast.LENGTH_SHORT).show()
                             Log.e("AlertSent", "Alert sent error: ${exception.message}")
@@ -376,9 +408,13 @@ fun OptionScreen(
                     }
                     .fillMaxWidth()) {
                 Column {
-                    Text(text = "Send Alert", style = MaterialTheme.typography.bodySmall)
                     Text(
-                        text = "Send an alert to test", style = MaterialTheme.typography.bodySmall
+                        text = "Send Alert",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "Send an alert to test",
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
@@ -404,7 +440,8 @@ fun NewUserFormScreen(navController: NavController) {
             .fillMaxSize()
             .padding(16.dp), verticalArrangement = Arrangement.Center
     ) {
-        TextField(value = email,
+        TextField(
+            value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
             singleLine = true,
@@ -414,7 +451,8 @@ fun NewUserFormScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(value = password,
+        TextField(
+            value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             singleLine = true,
