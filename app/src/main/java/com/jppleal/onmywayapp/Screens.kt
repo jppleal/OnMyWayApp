@@ -43,7 +43,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -106,7 +105,7 @@ fun LoginScreen(navController: NavController) {
 fun CredentialsForm(navController: NavController) {
     var email: String by remember { mutableStateOf("") }
     var password: String by remember { mutableStateOf("") }
-    var failed: Boolean by remember { mutableStateOf(false) }
+    val failed: Boolean by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     val auth = AuthFireB()
@@ -198,7 +197,6 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val alerts = remember { mutableStateListOf<Alert>() } //to storage the alerts received
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         fetchNewAlertsFromBackend(alerts)
@@ -213,7 +211,7 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             TopNavigationBar(
-                navController = navController, context = context
+                navController = navController
             )
             Spacer(modifier = Modifier.height(16.dp))
             if (alerts.isEmpty()) {
@@ -230,7 +228,7 @@ fun HomeScreen(
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            handleNotifications(alerts, context)
+            HandleNotifications(alerts, context)
         } else {
             alerts.forEach { alert ->
                 showAlertNotification(context, alert)
@@ -239,14 +237,8 @@ fun HomeScreen(
     }
 }
 
-//suspend fun updateAlerts(alerts: SnapshotStateList<Alert>) {
-//    val newAlerts = fetchNewAlertsFromBackend()
-//    alerts.clear()
-//    alerts.addAll(newAlerts)
-//}
-
 @Composable
-fun handleNotifications(alerts: List<Alert>, context: Context) {
+fun HandleNotifications(alerts: List<Alert>, context: Context) {
     if (ContextCompat.checkSelfPermission(
             context, Manifest.permission.POST_NOTIFICATIONS
         ) == PackageManager.PERMISSION_GRANTED
@@ -270,7 +262,6 @@ fun OptionScreen(
     navController: NavController
 ) {
     val context = LocalContext.current
-    val scope: CoroutineScope = rememberCoroutineScope()
     val auth = AuthFireB()
     val notificationService = NetworkModule.notificationService
     Surface(

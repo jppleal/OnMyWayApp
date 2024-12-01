@@ -1,7 +1,5 @@
 package com.jppleal.onmywayapp
 
-import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -45,15 +43,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
-import com.google.firebase.database.FirebaseDatabase
 import com.jppleal.onmywayapp.data.model.Alert
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopNavigationBar(
-    navController: NavController,
-    context: Context
+    navController: NavController
 ) {
     val scrollBehaviour = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     Scaffold(
@@ -61,30 +57,23 @@ fun TopNavigationBar(
             .nestedScroll(scrollBehaviour.nestedScrollConnection)
             .height(40.dp),
         topBar = {
-            CenterAlignedTopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.LightGray,
-                    titleContentColor = MaterialTheme.colorScheme.primary
-                ),
-                title = {
-                    Text(
-                        text = "On My Way App",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+            CenterAlignedTopAppBar(colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.LightGray,
+                titleContentColor = MaterialTheme.colorScheme.primary
+            ), title = {
+                Text(
+                    text = "On My Way App", maxLines = 1, overflow = TextOverflow.Ellipsis
+                )
+            }, actions = {
+                IconButton(onClick = {
+                    navController.navigate(Screen.OptionScreen.route)
+                    // logOut(context)
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings, contentDescription = "Settings"
                     )
-                },
-                actions = {
-                    IconButton(onClick = {
-                        navController.navigate(Screen.OptionScreen.route)
-                       // logOut(context)
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = "Settings"
-                        )
-                    }
-                },
-                scrollBehavior = scrollBehaviour
+                }
+            }, scrollBehavior = scrollBehaviour
             )
         },
     ) { innerPadding ->
@@ -102,6 +91,11 @@ fun AlertItem(alertData: Alert, onItemSelected: (Int) -> Unit) {
         val sdf = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault())
         sdf.format(java.util.Date(alertData.dateTime))
     }
+
+    val userId = SharedPrefsManager.getUserId()
+    val isResponded = alertData.responded?.containsKey(userId) == true
+    val status = alertData.responded?.get(userId)?.status
+
     OutlinedCard(
         elevation = CardDefaults.cardElevation(
             defaultElevation = 5.dp
@@ -133,26 +127,25 @@ fun AlertItem(alertData: Alert, onItemSelected: (Int) -> Unit) {
                 alertData.firefighters?.let { append("$it - Bombeiros; ") }
                 alertData.graduated?.let { append("$it - Graduados; ") }
                 alertData.truckDriver?.let { append("$it - Motoristas de pesados; ") }
-            },
-            modifier = Modifier.padding(5.dp)
+            }, modifier = Modifier.padding(5.dp)
         )
 
-        // Divider entre Texto e Botões
-        HorizontalDivider(modifier = Modifier.padding(5.dp), color = Color.Gray)
+        if (isResponded) {
+            //it was answered already
+            Text(
+                text = if (status == true) "Resposta: A CAMINHO (Tempo: $estimatedTime min)" else "Resposta: INDISPONÍVEL",
+                color = if(status == true) Color.Green else Color.Red,
+                modifier = Modifier.padding(5.dp)
+            )
+        } else {
 
-        // Botões de Resposta
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            if (accepted || declined) {
-                // Mensagem se o alerta foi aceito ou recusado
-                Text(
-                    text = "Resposta: ${if (accepted) "A CAMINHO (Tempo: $estimatedTime min)" else "INDISPONÍVEL"}",
-                    color = Color.Black,
-                    modifier = Modifier.padding(5.dp)
-                )
-            } else {
+            // Divider entre Texto e Botões
+            HorizontalDivider(modifier = Modifier.padding(5.dp), color = Color.Gray)
+
+            // Botões de Resposta
+            Row(
+                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center
+            ) {
                 // Botão "A Caminho"
                 Button(
                     onClick = {
@@ -168,7 +161,7 @@ fun AlertItem(alertData: Alert, onItemSelected: (Int) -> Unit) {
                 Button(
                     onClick = {
                         declined = true
-                        updatedAlertResponse(alertData, "Indisponível")
+                        updatedAlertResponse(alertData, false)
                     },
                     modifier = Modifier.padding(5.dp),
                     colors = ButtonDefaults.buttonColors(Color.Red)
@@ -180,15 +173,12 @@ fun AlertItem(alertData: Alert, onItemSelected: (Int) -> Unit) {
     }
 
     if (showDialog) {
-        EstimatedTimeDialog(
-            onDismiss = { showDialog = false },
-            onTimeSelected = { time ->
-                accepted = true
-                estimatedTime = time
-                updatedAlertResponse(alertData, "A Caminho", time)
-                showDialog = false
-            }
-        )
+        EstimatedTimeDialog(onDismiss = { showDialog = false }, onTimeSelected = { time ->
+            accepted = true
+            estimatedTime = time
+            updatedAlertResponse(alertData, true, time)
+            showDialog = false
+        })
     }
 }
 
@@ -229,7 +219,6 @@ fun ScrollContent(innerPadding: PaddingValues) {
         modifier = Modifier
             .padding(innerPadding)
             .verticalScroll(rememberScrollState())
-    ) {
-    }
+    ) {}
 }
 

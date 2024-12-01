@@ -10,7 +10,12 @@ data class Alert(
     val firefighters: Int? = 0,
     val graduated: Int? = 0,
     val truckDriver: Int? = 0,
-    var isResponded: Boolean = false
+    val responded: Map<String, Response>? = null
+)
+
+data class Response(
+    val status: Boolean = false,
+    val estimatedTime: Int? = null
 )
 
 data class User(

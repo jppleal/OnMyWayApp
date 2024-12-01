@@ -15,72 +15,64 @@ fun fetchNewAlertsFromBackend(alerts: SnapshotStateList<Alert>) {
     val alertsRef = database.getReference("alerts")
 
     // Listener para escutar atualizações em tempo real
-    alertsRef.addChildEventListener(
-        object : ChildEventListener {
-            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                val newAlert = snapshot.getValue(Alert::class.java)
+    alertsRef.addChildEventListener(object : ChildEventListener {
+        override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+            val newAlert = snapshot.getValue(Alert::class.java)
+            if (newAlert != null) {
+                alerts.add(newAlert)
+                Log.d("Alert.kt", "Novo alerta adicionado: $newAlert")
+            } else {
+                Log.d("Alert.kt", "Alerta já existente: $newAlert")
+            }
+        }
 
-                if (newAlert != null && !newAlert.isResponded) {
-                    alerts.add(newAlert)
-                    Log.d("Alert.kt", "Novo alerta adicionado: $newAlert")
-                } else {
-                    Log.d("Alert.kt", "Alerta já existente: $newAlert")
+        override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+            val updatedAlert = snapshot.getValue(Alert::class.java)
+            if (updatedAlert != null) {
+                val index = alerts.indexOfFirst { it.firebaseKey == updatedAlert.firebaseKey }
+                if (index >= 0) {
+                    alerts[index] = updatedAlert
+                    Log.d("Alert.kt", "Alerta atualizado: $updatedAlert")
                 }
             }
+        }
 
-            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-                val updatedAlert = snapshot.getValue(Alert::class.java)
-                if (updatedAlert != null) {
-                    val index = alerts.indexOfFirst { it.firebaseKey == updatedAlert.firebaseKey }
-                    if (index >= 0) {
-                        alerts[index] = updatedAlert
-                        Log.d("Alert.kt", "Alerta atualizado: $updatedAlert")
-                    }
-                }
+        override fun onChildRemoved(snapshot: DataSnapshot) {
+            val removedAlert = snapshot.getValue(Alert::class.java)
+            if (removedAlert != null) {
+                alerts.removeIf { it.firebaseKey == removedAlert.firebaseKey }
+                Log.d("Alert.kt", "Alerta removido: $removedAlert")
             }
+        }
 
-            override fun onChildRemoved(snapshot: DataSnapshot) {
-                val removedAlert = snapshot.getValue(Alert::class.java)
-                if (removedAlert != null) {
-                    alerts.removeIf { it.firebaseKey == removedAlert.firebaseKey }
-                    Log.d("Alert.kt", "Alerta removido: $removedAlert")
-                }
-            }
+        override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+            TODO("Not yet implemented")
+        }
 
-            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
-                TODO("Not yet implemented")
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("Alert.kt", "Erro ao escutar alertas: ${error.message}")
-            }
-        })
+        override fun onCancelled(error: DatabaseError) {
+            Log.e("Alert.kt", "Erro ao escutar alertas: ${error.message}")
+        }
+    })
 }
 
-fun updatedAlertResponse(alert: Alert, status: String, estimatedTime: Int? = null) {
+fun updatedAlertResponse(alert: Alert, status: Boolean, estimatedTime: Int? = null) {
     //get UID from shared preferences
     val userId = SharedPrefsManager.getUserId().toString()
-
     val database =
         FirebaseDatabase.getInstance("https://on-my-way-app-3ixreu-default-rtdb.europe-west1.firebasedatabase.app/")
-    val alertsRef = database.getReference("alerts").child(alert.firebaseKey).child("responded")
-
+    val alertsRef = database.getReference("alerts").child(alert.firebaseKey)
     //creates map of updates
     val updates = hashMapOf<String, Any>(
-        "status" to status,
-        "isResponded" to true,
-        "userId" to userId
+        "status" to status
     )
     estimatedTime?.let {
         updates["estimatedTime"] = it
     }
-
     //updates the data of the alert in the Firebase database
-    alertsRef.updateChildren(updates)
+    alertsRef.child("responded").child(userId).setValue(updates)
         .addOnSuccessListener {
             Log.d("Alert.kt", "Resposta atualizada com sucesso.")
-        }
-        .addOnFailureListener {
+        }.addOnFailureListener {
             Log.e("Alert.kt", "Erro ao atualizar resposta: ${it.message}")
         }
 }
@@ -91,10 +83,8 @@ fun addAlertToFirebase(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         FirebaseDatabase.getInstance("https://on-my-way-app-3ixreu-default-rtdb.europe-west1.firebasedatabase.app/")
     //obtain a reference for the 'alerts' knot
     val alertsRef = database.getReference("alerts")
-
     //create a unique ID for a new alert
     val alertId = alertsRef.push().key ?: return
-
     //Data from the alert to be added
     val alertData = Alert(
         firebaseKey = alertId,
@@ -105,22 +95,20 @@ fun addAlertToFirebase(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         graduated = 1,
         truckDriver = 1
     )
-
     //verifying if the alertId is not null
-    if (alertId != null) {
-        alertsRef.child(alertId).setValue(alertData)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    onSuccess()
-                    Log.d("Alert.kt", "New alert sent with success.")
-                } else {
-                    onFailure(Exception("Error sending new alert."))
-                    Log.e("Alert.kt", "New alert failed to sent.")
-                }
+    alertsRef.child(alertId).setValue(alertData).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                onSuccess()
+                Log.d("Alert.kt", "New alert sent with success.")
+            } else {
+                onFailure(Exception("Error sending new alert."))
+                Log.e("Alert.kt", "New alert failed to sent.")
             }
-    } else {
-        Log.e("Alert.kt", "Error: alertId is null.")
-    }
-
-
+        }
 }
+
+//fun hasUserResponded(alert: Alert): Boolean {
+//    val userId = SharedPrefsManager.getUserId().toString()
+//    return alert.responded?.containsKey(userId) == true
+//
+//}
