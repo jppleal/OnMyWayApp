@@ -168,7 +168,7 @@ fun AlertItem(alertData: Alert, onItemSelected: (Int) -> Unit) {
                 Button(
                     onClick = {
                         declined = true
-                        updatedAlertResponse(alertData.id, "Indisponível")
+                        updatedAlertResponse(alertData, "Indisponível")
                     },
                     modifier = Modifier.padding(5.dp),
                     colors = ButtonDefaults.buttonColors(Color.Red)
@@ -185,7 +185,7 @@ fun AlertItem(alertData: Alert, onItemSelected: (Int) -> Unit) {
             onTimeSelected = { time ->
                 accepted = true
                 estimatedTime = time
-                updatedAlertResponse(alertData.id, "A Caminho", time)
+                updatedAlertResponse(alertData, "A Caminho", time)
                 showDialog = false
             }
         )

@@ -15,29 +15,35 @@ fun fetchNewAlertsFromBackend(alerts: SnapshotStateList<Alert>) {
     val alertsRef = database.getReference("alerts")
 
     // Listener para escutar atualizações em tempo real
-        alertsRef.addChildEventListener(
+    alertsRef.addChildEventListener(
         object : ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                 val newAlert = snapshot.getValue(Alert::class.java)
-                newAlert?.let {
-                    alerts.add(it)
+
+                if (newAlert != null && !newAlert.isResponded) {
+                    alerts.add(newAlert)
+                    Log.d("Alert.kt", "Novo alerta adicionado: $newAlert")
+                } else {
+                    Log.d("Alert.kt", "Alerta já existente: $newAlert")
                 }
             }
 
             override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
                 val updatedAlert = snapshot.getValue(Alert::class.java)
-                updatedAlert?.let { alert ->
-                    val index = alerts.indexOfFirst { it.id == alert.id }
-                    if (index != -1) {
-                        alerts[index] = alert
+                if (updatedAlert != null) {
+                    val index = alerts.indexOfFirst { it.firebaseKey == updatedAlert.firebaseKey }
+                    if (index >= 0) {
+                        alerts[index] = updatedAlert
+                        Log.d("Alert.kt", "Alerta atualizado: $updatedAlert")
                     }
                 }
             }
 
             override fun onChildRemoved(snapshot: DataSnapshot) {
                 val removedAlert = snapshot.getValue(Alert::class.java)
-                removedAlert?.let { alert ->
-                    alerts.remove(alert)
+                if (removedAlert != null) {
+                    alerts.removeIf { it.firebaseKey == removedAlert.firebaseKey }
+                    Log.d("Alert.kt", "Alerta removido: $removedAlert")
                 }
             }
 
@@ -51,14 +57,19 @@ fun fetchNewAlertsFromBackend(alerts: SnapshotStateList<Alert>) {
         })
 }
 
-fun updatedAlertResponse(alertId: Int, status: String, estimatedTime: Int? = null) {
+fun updatedAlertResponse(alert: Alert, status: String, estimatedTime: Int? = null) {
+    //get UID from shared preferences
+    val userId = SharedPrefsManager.getUserId().toString()
+
     val database =
         FirebaseDatabase.getInstance("https://on-my-way-app-3ixreu-default-rtdb.europe-west1.firebasedatabase.app/")
-    val alertsRef = database.getReference("alerts").child(alertId.toString())
+    val alertsRef = database.getReference("alerts").child(alert.firebaseKey).child("responded")
 
     //creates map of updates
     val updates = hashMapOf<String, Any>(
-        "status" to status
+        "status" to status,
+        "isResponded" to true,
+        "userId" to userId
     )
     estimatedTime?.let {
         updates["estimatedTime"] = it
@@ -67,10 +78,10 @@ fun updatedAlertResponse(alertId: Int, status: String, estimatedTime: Int? = nul
     //updates the data of the alert in the Firebase database
     alertsRef.updateChildren(updates)
         .addOnSuccessListener {
-            Log.d("AlertResponse", "Resposta atualizada com sucesso.")
+            Log.d("Alert.kt", "Resposta atualizada com sucesso.")
         }
         .addOnFailureListener {
-            Log.e("AlertResponse", "Erro ao atualizar resposta: ${it.message}")
+            Log.e("Alert.kt", "Erro ao atualizar resposta: ${it.message}")
         }
 }
 
@@ -86,6 +97,7 @@ fun addAlertToFirebase(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
 
     //Data from the alert to be added
     val alertData = Alert(
+        firebaseKey = alertId,
         id = alertId.hashCode(),
         message = "Inc. Urbano",
         dateTime = System.currentTimeMillis(),
@@ -100,14 +112,14 @@ fun addAlertToFirebase(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     onSuccess()
-                    Log.d("AlertSent", "New alert sent with success.")
+                    Log.d("Alert.kt", "New alert sent with success.")
                 } else {
                     onFailure(Exception("Error sending new alert."))
-                    Log.e("AlertSent", "New alert failed to sent.")
+                    Log.e("Alert.kt", "New alert failed to sent.")
                 }
             }
     } else {
-        Log.e("AlertSent", "Error: alertId is null.")
+        Log.e("Alert.kt", "Error: alertId is null.")
     }
 
 

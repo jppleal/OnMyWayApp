@@ -3,12 +3,14 @@ package com.jppleal.onmywayapp.data.model
 import com.jppleal.onmywayapp.NotificationIdGenerator
 
 data class Alert(
+    val firebaseKey: String = "",
     val id: Int = NotificationIdGenerator.getNextNotificationId(),
     val message: String = "",
     val dateTime: Long = 0L,
     val firefighters: Int? = 0,
     val graduated: Int? = 0,
-    val truckDriver: Int? = 0
+    val truckDriver: Int? = 0,
+    var isResponded: Boolean = false
 )
 
 data class User(
