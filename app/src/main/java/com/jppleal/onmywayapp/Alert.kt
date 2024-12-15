@@ -7,6 +7,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.jppleal.onmywayapp.data.model.Alert
+import com.jppleal.onmywayapp.data.model.Response
 
 
 fun fetchNewAlertsFromBackend(alerts: SnapshotStateList<Alert>) {
@@ -22,6 +23,7 @@ fun fetchNewAlertsFromBackend(alerts: SnapshotStateList<Alert>) {
                 alerts.add(newAlert)
                 Log.d("Alert.kt", "Novo alerta adicionado: $newAlert")
             } else {
+
                 Log.d("Alert.kt", "Alerta já existente: $newAlert")
             }
         }
@@ -112,3 +114,17 @@ fun addAlertToFirebase(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
 //    return alert.responded?.containsKey(userId) == true
 //
 //}
+
+fun fetchUserResponse(alert: Alert, onResult: (Response?) -> Unit){
+    val userId = SharedPrefsManager.getUserId().toString()
+    val database =
+        FirebaseDatabase.getInstance("https://on-my-way-app-3ixreu-default-rtdb.europe-west1.firebasedatabase.app/")
+    val alertRef = database.getReference("alerts").child(alert.firebaseKey).child("responded").child(userId)
+    alertRef.get().addOnSuccessListener { snapshot ->
+        val response= snapshot.getValue(Response::class.java)
+        onResult(response)
+    }.addOnFailureListener { exception ->
+        Log.e("Alert.kt", "Erro ao carregar a resposta: ${exception.message}")
+        onResult(null)
+    }
+}

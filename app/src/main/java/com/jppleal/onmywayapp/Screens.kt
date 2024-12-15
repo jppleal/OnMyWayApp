@@ -34,6 +34,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -109,6 +110,9 @@ fun CredentialsForm(navController: NavController) {
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     val auth = AuthFireB()
+    var isError by remember {
+        mutableStateOf(false)
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
@@ -120,25 +124,33 @@ fun CredentialsForm(navController: NavController) {
             Arrangement.Center,
             Alignment.CenterHorizontally
         ) {
-            TextField(
+            OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
                 singleLine = true,
+                isError = isError && email.isBlank(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email, imeAction = ImeAction.Next
                 ),
                 keyboardActions = KeyboardActions(onNext = { focusRequester.requestFocus() }),
                 modifier = Modifier.fillMaxWidth()
             )
+            if (isError && email.isBlank()){
+                Text(
+                    text = "Preencha o campo",
+                    color = Color.Red,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             Spacer(
                 modifier = Modifier.padding(8.dp)
             )
-            TextField(
-                value = password,
+            OutlinedTextField(value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
                 singleLine = true,
+                isError = isError && password.isBlank(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardActions = KeyboardActions(onDone = {
@@ -154,12 +166,21 @@ fun CredentialsForm(navController: NavController) {
                     .fillMaxWidth()
                     .focusRequester(focusRequester)
             )
+            if (isError && password.isBlank()){
+                Text(
+                    text = "Preencher o campo",
+                    color = Color.Red,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             Spacer(Modifier.padding(8.dp))
             if (failed) {
                 Text("Please Try Again.")
             }
             Spacer(Modifier.padding(8.dp))
             Button(onClick = {
+                isError = email.isBlank() || password.isBlank()
+                if(!isError){
                 auth.loginUser(email, password, onSuccess = {
                     Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
                     navController.navigate(Screen.HomeScreen.route)
@@ -167,7 +188,7 @@ fun CredentialsForm(navController: NavController) {
                     Toast.makeText(context, "Login Failed", Toast.LENGTH_SHORT).show()
                     Log.e("LoginError", "Login error: ${exception.message}")
                 })
-            }) {
+            }}, enabled = email.isNotBlank() || password.isNotBlank()) {
                 Text("Log In")
             }
             Spacer(modifier = Modifier.padding(8.dp))
@@ -251,7 +272,7 @@ fun HandleNotifications(alerts: List<Alert>, context: Context) {
     }
 }
 
-fun showAlertNotification(context: Context, alert: Alert){
+fun showAlertNotification(context: Context, alert: Alert) {
     NotificationUtils.showNotification(
         context, "Nova Ocorrência!", alert.message, alert.dateTime.toInt()
     )
@@ -363,49 +384,56 @@ fun OptionScreen(
                     )
                 }
             }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clickable {// Send test alert
                         addAlertToFirebase(onSuccess = {
-                            Toast.makeText(
-                                context, "Alert sent Successfully", Toast.LENGTH_SHORT
-                            ).show()
+                            Toast
+                                .makeText(
+                                    context, "Alert sent Successfully", Toast.LENGTH_SHORT
+                                )
+                                .show()
                             CoroutineScope(Dispatchers.IO).launch {
                                 try {
                                     notificationService.sendAlert(
                                         title = "Test Alert", "This is a test sent from the App!"
                                     )
                                     withContext(Dispatchers.Main) {
-                                        Toast.makeText(
-                                            context, "Alert sent Successfully", Toast.LENGTH_SHORT
-                                        ).show()
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                "Alert sent Successfully",
+                                                Toast.LENGTH_SHORT
+                                            )
+                                            .show()
                                         Log.e("AlertSent", "Alert sent Successfully")
 
                                     }
                                 } catch (e: Exception) {
                                     withContext(Dispatchers.Main) {
-                                        Toast.makeText(
-                                            context, "Alert sent failed.", Toast.LENGTH_SHORT
-                                        ).show()
+                                        Toast
+                                            .makeText(
+                                                context, "Alert sent failed.", Toast.LENGTH_SHORT
+                                            )
+                                            .show()
                                         Log.e("AlertSent", "Alert sent error: ${e.message}")
                                     }
                                 }
                             }
                         }, onFailure = { exception ->
-                            Toast.makeText(context, "Alert sent failed.", Toast.LENGTH_SHORT).show()
+                            Toast
+                                .makeText(context, "Alert sent failed.", Toast.LENGTH_SHORT)
+                                .show()
                             Log.e("AlertSent", "Alert sent error: ${exception.message}")
                         })
                     }
                     .fillMaxWidth()) {
                 Column {
                     Text(
-                        text = "Send Alert",
-                        style = MaterialTheme.typography.bodySmall
+                        text = "Send Alert", style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = "Send an alert to test",
-                        style = MaterialTheme.typography.bodySmall
+                        text = "Send an alert to test", style = MaterialTheme.typography.bodySmall
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
@@ -431,8 +459,7 @@ fun NewUserFormScreen(navController: NavController) {
             .fillMaxSize()
             .padding(16.dp), verticalArrangement = Arrangement.Center
     ) {
-        TextField(
-            value = email,
+        TextField(value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
             singleLine = true,
@@ -442,8 +469,7 @@ fun NewUserFormScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            value = password,
+        TextField(value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             singleLine = true,

@@ -1,6 +1,7 @@
 package com.jppleal.onmywayapp
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,8 +10,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -30,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +48,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.jppleal.onmywayapp.data.model.Alert
+import com.jppleal.onmywayapp.data.model.Response
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,85 +96,107 @@ fun AlertItem(alertData: Alert, onItemSelected: (Int) -> Unit) {
     var declined by remember { mutableStateOf(false) }
     var estimatedTime by remember { mutableStateOf(0) }
     val formattedDate = remember(alertData.dateTime) {
-        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault())
-        sdf.format(java.util.Date(alertData.dateTime))
+        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+        sdf.format(Date(alertData.dateTime))
     }
 
     val userId = SharedPrefsManager.getUserId()
     val isResponded = alertData.responded?.containsKey(userId) == true
     val status = alertData.responded?.get(userId)?.status
 
-    OutlinedCard(
+    LaunchedEffect(alertData) {
+        fetchUserResponse(alertData){response ->
+            response?.let {
+                estimatedTime = it.estimatedTime ?: 0
+            }
+        }
+    }
+
+    Card(
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 5.dp
+            defaultElevation = 8.dp
+        ),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (accepted) Color(0xFFB0BEC5) else Color(
+                0xFFFFFFFF
+            )
         ),
         border = BorderStroke(1.dp, color = if (accepted) Color.Green else Color.LightGray),
-        modifier = Modifier.padding(10.dp, 5.dp, 10.dp, 5.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp) //.clickable{ }
     ) {
-        // Título do Alerta
-        Text(
-            text = alertData.message,
-            modifier = Modifier.padding(5.dp),
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(1.dp))
-        // Data e Hora do Alerta
-        Text(
-            text = "Data/Hora: $formattedDate",
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(5.dp),
-            color = Color.Gray
-        )
-
-        Spacer(modifier = Modifier.height(1.dp))
-        // Informação Solicitada
-        Text(
-            buildString {
-                append("Solicita-se: \n")
-                alertData.firefighters?.let { append("$it - Bombeiros; ") }
-                alertData.graduated?.let { append("$it - Graduados; ") }
-                alertData.truckDriver?.let { append("$it - Motoristas de pesados; ") }
-            }, modifier = Modifier.padding(5.dp)
-        )
-
-        if (isResponded) {
-            //it was answered already
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
+            // Título do Alerta
             Text(
-                text = if (status == true) "Resposta: A CAMINHO (Tempo: $estimatedTime min)" else "Resposta: INDISPONÍVEL",
-                color = if(status == true) Color.Green else Color.Red,
-                modifier = Modifier.padding(5.dp)
+                text = alertData.message,
+                modifier = Modifier.padding(5.dp),
+                textAlign = TextAlign.Center
             )
-        } else {
 
-            // Divider entre Texto e Botões
-            HorizontalDivider(modifier = Modifier.padding(5.dp), color = Color.Gray)
+            Spacer(modifier = Modifier.height(1.dp))
+            // Data e Hora do Alerta
+            Text(
+                text = "Data/Hora: $formattedDate",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(5.dp),
+                color = Color.Gray
+            )
 
-            // Botões de Resposta
-            Row(
-                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center
-            ) {
-                // Botão "A Caminho"
-                Button(
-                    onClick = {
-                        showDialog = true
-                        onItemSelected(alertData.id)
-                    },
-                    modifier = Modifier.padding(5.dp),
-                    colors = ButtonDefaults.buttonColors(Color.Green)
+            Spacer(modifier = Modifier.height(1.dp))
+            // Informação Solicitada
+            Text(
+                buildString {
+                    append("Solicita-se: \n")
+                    alertData.firefighters?.let { append("$it - Bombeiros; ") }
+                    alertData.graduated?.let { append("$it - Graduados; ") }
+                    alertData.truckDriver?.let { append("$it - Motoristas de pesados; ") }
+                }, modifier = Modifier.padding(5.dp)
+            )
+
+            if (isResponded) {
+                //it was answered already
+                Text(
+                    text = if (status == true) "Resposta: A CAMINHO (Tempo: $estimatedTime min)" else "Resposta: INDISPONÍVEL",
+                    color = if (status == true) Color.Green else Color.Red,
+                    modifier = Modifier.padding(5.dp)
+                )
+            } else {
+
+                // Divider entre Texto e Botões
+                HorizontalDivider(modifier = Modifier.padding(5.dp), color = Color.Gray)
+
+                // Botões de Resposta
+                Row(
+                    modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center
                 ) {
-                    Text(text = "A CAMINHO", color = Color.White)
-                }
-                // Botão "Indisponível"
-                Button(
-                    onClick = {
-                        declined = true
-                        updatedAlertResponse(alertData, false)
-                    },
-                    modifier = Modifier.padding(5.dp),
-                    colors = ButtonDefaults.buttonColors(Color.Red)
-                ) {
-                    Text(text = "INDISPONÍVEL", color = Color.White)
+                    // Botão "A Caminho"
+                    Button(
+                        onClick = {
+                            showDialog = true
+                            onItemSelected(alertData.id)
+                        },
+                        modifier = Modifier.padding(5.dp),
+                        colors = ButtonDefaults.buttonColors(Color.Green)
+                    ) {
+                        Text(text = "A CAMINHO", color = Color.White)
+                    }
+                    // Botão "Indisponível"
+                    Button(
+                        onClick = {
+                            declined = true
+                            updatedAlertResponse(alertData, false)
+                        },
+                        modifier = Modifier.padding(5.dp),
+                        colors = ButtonDefaults.buttonColors(Color.Red)
+                    ) {
+                        Text(text = "INDISPONÍVEL", color = Color.White)
+                    }
                 }
             }
         }
@@ -188,21 +218,22 @@ fun EstimatedTimeDialog(onDismiss: () -> Unit, onTimeSelected: (Int) -> Unit) {
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(8.dp, 32.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(8.dp),
+                    Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Selecione o Tempo Estimado de Chegada")
+                Text("Selecione o tempo estimado de chegada")
                 Spacer(modifier = Modifier.height(16.dp))
-                // Segmento de botões para selecionar o tempo
+                //Segmento de botões para selecionar o tempo
                 Row {
-                    Button(onClick = { selectedTime = 5 }) { Text("5 min") }
+                    Button(onClick = { selectedTime = 5 }) { Text(text="5 min", maxLines = 1, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)}
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = { selectedTime = 10 }) { Text("10 min") }
+                    Button(onClick = { selectedTime = 10 }) { Text(text="10 min", maxLines = 1, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)}
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = { selectedTime = 15 }) { Text("15 min") }
+                    Button(onClick = { selectedTime = 15 }) { Text(text="15 min", maxLines = 1, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)}
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = { onTimeSelected(selectedTime) }) {
