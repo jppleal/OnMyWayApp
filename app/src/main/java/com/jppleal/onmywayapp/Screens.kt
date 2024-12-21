@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
+import android.widget.Space
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,6 +43,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,14 +58,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.google.firebase.database.FirebaseDatabase
 import com.jppleal.onmywayapp.data.model.Alert
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -199,15 +206,6 @@ fun CredentialsForm(navController: NavController) {
 
     }
 }
-
-//@Composable
-//fun AlertsList(alerts: List<Alert>) {
-//    LazyColumn {
-//        items(alerts.size) { alert ->
-//            Text(text = alerts[alert].message)
-//        }
-//    }
-//}
 
 //HOME SCREEN NOTES
 //1. There should be a function just to load new alerts and clean old ones. This function should be used in the LaunchedEffect()
@@ -451,8 +449,16 @@ fun OptionScreen(
 fun NewUserFormScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
     val context = LocalContext.current
     val auth = AuthFireB()
+
+    //Valências
+    var isBombeiro by remember { mutableStateOf(false)}
+    var isMotoristaPesados by remember { mutableStateOf(false) }
+    var isGraduado by remember { mutableStateOf(false) }
+    var isOptel by remember { mutableStateOf(false) }
+
 
     Column(
         modifier = Modifier
@@ -469,6 +475,17 @@ fun NewUserFormScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
+        TextField(value = name,
+            onValueChange = {name = it},
+            label = {
+                Text("Nome")},
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Unspecified, imeAction = ImeAction.Next
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
         TextField(value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
@@ -479,9 +496,54 @@ fun NewUserFormScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
+        Text("Valências", style = MaterialTheme.typography.bodyMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = isBombeiro,
+                onCheckedChange = {isBombeiro = it}
+            )
+            Text("Bombeiro", modifier = Modifier.padding(start = 8.dp))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = isMotoristaPesados,
+                onCheckedChange = {isMotoristaPesados = it}
+            )
+            Text("Motorista de Pesados", modifier = Modifier.padding(start = 8.dp))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = isGraduado,
+                onCheckedChange = {isGraduado = it}
+            )
+            Text("Graduado", modifier = Modifier.padding(start = 8.dp))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = isOptel,
+                onCheckedChange = {isOptel = it}
+            )
+            Text("Operador de Central", modifier = Modifier.padding(start = 8.dp))
+        }
         Button(
             onClick = {
-                auth.registerUser(email, password, onSuccess = {
+                val skills = mapOf(
+                    "bombeiro" to isBombeiro,
+                    "motorista_pesados" to isMotoristaPesados,
+                    "graduado" to isGraduado,
+                    "optel" to isOptel
+                )
+                auth.registerUser(email.lowercase(Locale.getDefault()), name, password, onSuccess = {
+                    FirebaseDatabase.getInstance().getReference("users/${auth.currentUser()}/skills")
+                        .setValue(skills)
+                        .addOnSuccessListener {
+                            Toast.makeText(context, "Skills saved", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(context, "Error saving skills", Toast.LENGTH_SHORT).show()
+                            Log.e("RegistrationError", "Error saving skills: ${e.message}")
+                        }
                     Toast.makeText(
                         context, "Registration Successful", Toast.LENGTH_SHORT
                     ).show()

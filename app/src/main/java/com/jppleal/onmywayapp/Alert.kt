@@ -58,26 +58,38 @@ fun fetchNewAlertsFromBackend(alerts: SnapshotStateList<Alert>) {
 }
 
 fun updatedAlertResponse(alert: Alert, status: Boolean, estimatedTime: Int? = null) {
-    //get UID from shared preferences
+    // Get UID from shared preferences
     val userId = SharedPrefsManager.getUserId().toString()
-    val database =
-        FirebaseDatabase.getInstance("https://on-my-way-app-3ixreu-default-rtdb.europe-west1.firebasedatabase.app/")
+    val database = FirebaseDatabase.getInstance("https://on-my-way-app-3ixreu-default-rtdb.europe-west1.firebasedatabase.app/")
     val alertsRef = database.getReference("alerts").child(alert.firebaseKey)
-    //creates map of updates
-    val updates = hashMapOf<String, Any>(
-        "status" to status
-    )
-    estimatedTime?.let {
-        updates["estimatedTime"] = it
-    }
-    //updates the data of the alert in the Firebase database
-    alertsRef.child("responded").child(userId).setValue(updates)
-        .addOnSuccessListener {
-            Log.d("Alert.kt", "Resposta atualizada com sucesso.")
-        }.addOnFailureListener {
-            Log.e("Alert.kt", "Erro ao atualizar resposta: ${it.message}")
+    val usersRef = database.getReference("users").child(userId) // Referência ao nó de utilizadores
+
+    // Busca o nome do utilizador
+    usersRef.get().addOnSuccessListener { snapshot ->
+        val userName = snapshot.child("name").value as? String ?: "Desconhecido"
+
+        // Cria o mapa de atualizações
+        val updates = hashMapOf<String, Any>(
+            "status" to status,
+            "name" to userName // Adiciona o nome do utilizador
+        )
+        estimatedTime?.let {
+            updates["estimatedTime"] = it
         }
+
+        // Atualiza os dados do alerta no Firebase Database
+        alertsRef.child("responded").child(userId).setValue(updates)
+            .addOnSuccessListener {
+                Log.d("Alert.kt", "Resposta atualizada com sucesso.")
+            }
+            .addOnFailureListener {
+                Log.e("Alert.kt", "Erro ao atualizar resposta: ${it.message}")
+            }
+    }.addOnFailureListener { exception ->
+        Log.e("Alert.kt", "Erro ao obter o nome do utilizador: ${exception.message}")
+    }
 }
+
 
 fun addAlertToFirebase(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
     //get firebaseDatabase instance

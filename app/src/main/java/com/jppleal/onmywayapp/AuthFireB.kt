@@ -3,6 +3,7 @@ package com.jppleal.onmywayapp
 import android.content.Context
 import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 class AuthFireB() {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -36,13 +37,32 @@ class AuthFireB() {
     fun registerUser(
         email: String,
         password: String,
+        name: String,
         onSuccess: () -> Unit,
         onFailure: (Exception) -> Unit
     ) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    onSuccess()
+                    val currentUser = auth.currentUser
+                    val userId = currentUser?.uid
+                    if(userId != null){
+                        // salva informação do user no Realtime Database
+                        val userData = mapOf(
+                            "name" to name,
+                            "email" to email
+                        )
+                        FirebaseDatabase.getInstance().getReference("users").child(userId)
+                            .setValue(userData)
+                            .addOnSuccessListener {
+                                onSuccess()
+                            }
+                            .addOnFailureListener { e ->
+                                onFailure(e)
+                            }
+                    }else{
+                        onFailure(Exception("Error saving user data"))
+                    }
                 } else {
                     onFailure(task.exception!!)
                 }
@@ -60,5 +80,10 @@ class AuthFireB() {
         auth.signOut()
         //clean shared preferences
         SharedPrefsManager.clearUserId()
+    }
+
+    //get current user
+    fun currentUser(): String? {
+        return auth.currentUser?.uid
     }
 }
