@@ -216,6 +216,7 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val alerts = remember { mutableStateListOf<Alert>() } //to storage the alerts received
+    val isAnyAlertResponded = remember { mutableStateOf(false)}
 
     LaunchedEffect(Unit) {
         fetchNewAlertsFromBackend(alerts)
@@ -238,8 +239,9 @@ fun HomeScreen(
             } else {
                 LazyColumn {
                     items(alerts) { alert: Alert ->
-                        AlertItem(alertData = alert) { alertId ->
+                        AlertItem(alertData = alert, isAnyAlertResponded = isAnyAlertResponded) { alertId ->
                             //Tratamento ao selecionar um alerta
+
                         }
                     }
                 }
@@ -534,7 +536,7 @@ fun NewUserFormScreen(navController: NavController) {
                     "graduado" to isGraduado,
                     "optel" to isOptel
                 )
-                auth.registerUser(email.lowercase(Locale.getDefault()), name, password, onSuccess = {
+                auth.registerUser(email = email.lowercase(Locale.getDefault()), password = password, name = name, onSuccess = {
                     FirebaseDatabase.getInstance().getReference("users/${auth.currentUser()}/skills")
                         .setValue(skills)
                         .addOnSuccessListener {

@@ -34,6 +34,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -90,7 +91,7 @@ fun TopNavigationBar(
 }
 
 @Composable
-fun AlertItem(alertData: Alert, onItemSelected: (Int) -> Unit) {
+fun AlertItem(alertData: Alert, isAnyAlertResponded: MutableState<Boolean>, onItemSelected: (Int) -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
     var accepted by remember { mutableStateOf(false) }
     var declined by remember { mutableStateOf(false) }
@@ -159,13 +160,18 @@ fun AlertItem(alertData: Alert, onItemSelected: (Int) -> Unit) {
                 }, modifier = Modifier.padding(5.dp)
             )
 
-            if (isResponded) {
+            if (isResponded || isAnyAlertResponded.value) {
                 //it was answered already
                 Text(
-                    text = if (status == true) "Resposta: A CAMINHO (Tempo: $estimatedTime min)" else "Resposta: INDISPONÍVEL",
+                    text = if (isResponded){
+                    if (status == true) "Resposta: A CAMINHO (Tempo: $estimatedTime min)" else "Resposta: INDISPONÍVEL"}
+                    else {
+                        "Já respondeu a outro alerta."
+                    },
                     color = if (status == true) Color.Green else Color.Red,
                     modifier = Modifier.padding(5.dp)
                 )
+
             } else {
 
                 // Divider entre Texto e Botões
@@ -179,6 +185,7 @@ fun AlertItem(alertData: Alert, onItemSelected: (Int) -> Unit) {
                     Button(
                         onClick = {
                             showDialog = true
+                            isAnyAlertResponded.value = true
                             onItemSelected(alertData.id)
                         },
                         modifier = Modifier.padding(5.dp),
@@ -190,6 +197,7 @@ fun AlertItem(alertData: Alert, onItemSelected: (Int) -> Unit) {
                     Button(
                         onClick = {
                             declined = true
+                            isAnyAlertResponded.value = true
                             updatedAlertResponse(alertData, false)
                         },
                         modifier = Modifier.padding(5.dp),

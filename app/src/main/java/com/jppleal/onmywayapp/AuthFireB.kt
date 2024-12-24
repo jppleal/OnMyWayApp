@@ -1,21 +1,23 @@
 package com.jppleal.onmywayapp
 
-import android.content.Context
 import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 
-class AuthFireB() {
+class AuthFireB {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
-    //Login Function
+    // Login Function
     fun loginUser(
         email: String,
         password: String,
         onSuccess: () -> Unit,
         onFailure: (Exception) -> Unit
     ) {
-        auth.signInWithEmailAndPassword(email, password)
+        val sanitizedEmail = email.trim()
+        val sanitizedPassword = password.trim()
+
+        auth.signInWithEmailAndPassword(sanitizedEmail, sanitizedPassword)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val currentUser = auth.currentUser
@@ -23,17 +25,18 @@ class AuthFireB() {
                     if (userId != null) {
                         SharedPrefsManager.setUserId(userId)
                         onSuccess()
-                    }
-                    else{
-                        onFailure(Exception("Error getting user ID"))
+                    } else {
+                        onFailure(Exception("Erro ao obter UID do utilizador"))
                     }
                 } else {
-                    onFailure(task.exception!!)
+                    task.exception?.let {
+                        onFailure(it)
+                    } ?: onFailure(Exception("Erro desconhecido durante o login"))
                 }
             }
     }
 
-    //Regist function
+    // Regist Function
     fun registerUser(
         email: String,
         password: String,
@@ -41,16 +44,19 @@ class AuthFireB() {
         onSuccess: () -> Unit,
         onFailure: (Exception) -> Unit
     ) {
-        auth.createUserWithEmailAndPassword(email, password)
+        val sanitizedEmail = email.trim()
+        val sanitizedPassword = password.trim()
+
+        auth.createUserWithEmailAndPassword(sanitizedEmail, sanitizedPassword)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val currentUser = auth.currentUser
                     val userId = currentUser?.uid
-                    if(userId != null){
-                        // salva informação do user no Realtime Database
+                    if (userId != null) {
+                        // Salva informação do utilizador no Realtime Database
                         val userData = mapOf(
                             "name" to name,
-                            "email" to email
+                            "email" to sanitizedEmail
                         )
                         FirebaseDatabase.getInstance().getReference("users").child(userId)
                             .setValue(userData)
@@ -60,29 +66,32 @@ class AuthFireB() {
                             .addOnFailureListener { e ->
                                 onFailure(e)
                             }
-                    }else{
-                        onFailure(Exception("Error saving user data"))
+                    } else {
+                        onFailure(Exception("Erro ao salvar dados do utilizador"))
                     }
                 } else {
-                    onFailure(task.exception!!)
+                    task.exception?.let {
+                        onFailure(it)
+                    } ?: onFailure(Exception("Erro desconhecido durante o registo"))
                 }
             }
     }
 
-    //isLogged function
+    // Check if User is Logged In
     fun isLogged(): Boolean {
-        SharedPrefsManager.setUserId(auth.currentUser?.uid ?: "")
-        return auth.currentUser != null
+        val currentUserId = auth.currentUser?.uid
+        SharedPrefsManager.setUserId(currentUserId ?: "")
+        return currentUserId != null
     }
 
-    //logout function
+    // Logout Function
     fun logoutUser() {
         auth.signOut()
-        //clean shared preferences
+        // Limpa Shared Preferences
         SharedPrefsManager.clearUserId()
     }
 
-    //get current user
+    // Get Current User ID
     fun currentUser(): String? {
         return auth.currentUser?.uid
     }
