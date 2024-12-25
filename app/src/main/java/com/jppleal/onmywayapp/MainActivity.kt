@@ -36,18 +36,17 @@ class MainActivity : ComponentActivity() {
             val intent = Intent(this, AlertService::class.java)
             this.startService(intent)
 
-            FirebaseMessaging.getInstance().subscribeToTopic("alerts")
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Log.e("FCM", "Subscribed to alert topic")
-                    } else {
-                        Log.e("FCM", "Failed to subscribe to alert topic", task.exception)
-                    }
-                }
-
             val navController = rememberNavController()
             OnMyWayAppTheme {
                OnMyWayApp(navController = navController, AuthFireB())
+                FirebaseMessaging.getInstance().subscribeToTopic("alerts")
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            Log.e("FCM", "Subscrito no tópico de alertas com sucesso!")
+                        } else {
+                            Log.e("FCM", "Erro ao subscrever no tópico de alertas.", task.exception)
+                        }
+                    }
             }
         }
     }

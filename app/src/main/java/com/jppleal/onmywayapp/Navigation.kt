@@ -5,7 +5,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.jppleal.onmywayapp.ui.theme.OnMyWayAppTheme
-import io.github.jan.supabase.auth.user.UserSession
 
 sealed class Screen(val route: String){
     data object LogInScreen : Screen("login")
